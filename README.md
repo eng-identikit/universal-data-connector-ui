@@ -11,10 +11,15 @@ Built with **React 18 + TypeScript**, **Vite**, **Material UI (MUI v5)** and **R
 ## 🎯 Features
 
 - **Dashboard** — overall system status, sources health and key metrics at a glance
-- **Connectors** — create, edit, delete, start/stop/restart data sources (OPC UA, Modbus, MQTT, HTTP, ...)
+- **Connectors** — create, edit, delete, start/stop/restart data sources (OPC UA, Modbus, MQTT, HTTP, PROFINET, EtherCAT, ...), with ready-made configuration templates
 - **Mapping** — browse the devices/entities produced by the UDC mapping engine
-- **Storage** — configure the storage adapter (Memory, Redis, TimescaleDB), test the connection and check its health
-- **Live Data** — real-time data stream via WebSocket (last 500 messages kept in memory)
+- **Storage** — configure the storage adapter (Memory, Redis, TimescaleDB), test the connection and check its health. Shows the storage actually in use and warns when the backend has fallen back to in-memory storage
+- **Live Data** — real-time dashboard fed by the WebSocket stream:
+  - **Charts**: one rolling chart per numeric measurement (1 / 5 / 15 min window; booleans drawn as 0/1 steps)
+  - **Current values**: one tile per measurement with its latest value and unit, dimmed when it has not updated for 10 s
+  - **Raw stream**: the last messages as received
+  - filter by source, search by measurement, pause (the view freezes but data keeps being collected), message rate and source status
+- **History** — browse the data recorded in TimescaleDB: time range presets or custom range, drag-to-zoom and pan, one chart per measurement (average line with min/max band, synced crosshair) and paginated raw records
 - **Settings** — UI preferences: language and light/dark theme
 - **Internationalization** — English and Italian via i18next (default: Italian, stored in `localStorage` under `udc-language`)
 
@@ -54,7 +59,7 @@ universal-data-connector-ui/
 └── src/
     ├── api/
     │   ├── client.ts         # Axios instance
-    │   ├── endpoints.ts      # Typed API calls (status, sources, data, mapping, storage)
+    │   ├── endpoints.ts      # Typed API calls (status, sources, data, history, mapping, storage)
     │   └── types.ts          # API response types
     ├── components/
     │   ├── Layout/           # AppLayout, Sidebar, TopBar
@@ -64,7 +69,7 @@ universal-data-connector-ui/
     │   └── AppContext.tsx    # Global app state (theme, ...)
     ├── hooks/
     │   ├── useUDCStatus.ts   # Polls backend status
-    │   └── useWebSocket.ts   # Live data stream with auto-reconnect
+    │   └── useWebSocket.ts   # WebSocket stream with auto-reconnect
     ├── i18n/
     │   ├── index.ts          # i18next setup
     │   └── locales/          # en.json, it.json
@@ -73,7 +78,8 @@ universal-data-connector-ui/
     │   ├── Connectors/       # Source list + create/edit dialog
     │   ├── Mapping/
     │   ├── Storage/
-    │   ├── LiveData/
+    │   ├── LiveData/         # Real-time charts, current values, raw stream
+│   ├── History/          # TimescaleDB history browser
     │   └── Settings/
     ├── theme/                # MUI light/dark themes
     ├── App.tsx               # Routes
@@ -90,10 +96,13 @@ The UI talks to the UDC REST API:
 | Sources | `GET /api/sources`, `POST /api/sources/:id/start|stop|restart` |
 | Sources CRUD | `POST/PUT/DELETE /api/config/sources[/:id]`, `POST /api/config/reload` |
 | Data | `GET /api/data/latest?limit=&source=` |
+| History | `GET /api/history/status`, `GET /api/history/sources`, `GET /api/history/measurements`, `GET /api/history/series`, `GET /api/history/records` |
 | Mapping | `GET /api/mapping/entities` |
 | Storage | `GET/PUT /api/config/storage`, `GET /api/config/storage/types`, `POST /api/config/storage/test`, `GET /api/config/storage/health`, `POST /api/config/storage/configure` |
 
-Live data uses a WebSocket connection to the backend with automatic reconnection.
+Live data uses the backend WebSocket (`ws://<host>:3001`, the API URL from Settings with port `3000` replaced by `3001`) with automatic reconnection. The WebSocket is not proxied by Vite, so port `3001` must be reachable from the browser. Message format: see [API documentation](../universal-data-connector/docs/API.md#websocket-real-time-stream).
+
+The History page needs TimescaleDB configured in the backend (as the active storage or under `alternatives.timescaledb` in `config/storage.json`).
 
 ## 🛠️ Tech Stack
 

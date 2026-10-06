@@ -1,54 +1,73 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 
-type WSMessage = {
+export type WSMessage = {
   type: string
   data?: unknown
+  payload?: unknown
   timestamp?: string
   [key: string]: unknown
 }
 
-export function useWebSocket(url: string, enabled = true) {
+interface UseWebSocketOptions {
+  /** Called for every parsed message, without triggering a re-render */
+  onMessage?: (msg: WSMessage) => void
+  /** How many messages to keep in `messages` state (0 = don't keep any) */
+  bufferSize?: number
+}
+
+export function useWebSocket(url: string, enabled = true, options: UseWebSocketOptions = {}) {
+  const { bufferSize = 500 } = options
   const [connected, setConnected] = useState(false)
   const [messages, setMessages] = useState<WSMessage[]>([])
   const [error, setError] = useState<string | null>(null)
   const ws = useRef<WebSocket | null>(null)
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const closing = useRef(false)
+  const onMessageRef = useRef(options.onMessage)
+  onMessageRef.current = options.onMessage
 
   const connect = useCallback(() => {
     if (!enabled || !url) return
+    if (reconnectTimer.current) clearTimeout(reconnectTimer.current)
+    closing.current = false
     try {
-      ws.current = new WebSocket(url)
+      ws.current?.close()
+      const socket = new WebSocket(url)
+      ws.current = socket
 
-      ws.current.onopen = () => {
+      socket.onopen = () => {
         setConnected(true)
         setError(null)
       }
 
-      ws.current.onmessage = (evt) => {
+      socket.onmessage = (evt) => {
         try {
           const msg: WSMessage = JSON.parse(evt.data)
-          setMessages((prev) => [msg, ...prev].slice(0, 500)) // keep last 500
+          onMessageRef.current?.(msg)
+          if (bufferSize > 0) setMessages((prev) => [msg, ...prev].slice(0, bufferSize))
         } catch {
           // ignore malformed messages
         }
       }
 
-      ws.current.onerror = () => {
+      socket.onerror = () => {
         setError('WebSocket connection error')
         setConnected(false)
       }
 
-      ws.current.onclose = () => {
+      socket.onclose = () => {
+        if (ws.current !== socket) return
         setConnected(false)
-        // Auto-reconnect after 5 seconds
-        reconnectTimer.current = setTimeout(() => connect(), 5000)
+        // Auto-reconnect after 5 seconds, unless closed on purpose
+        if (!closing.current) reconnectTimer.current = setTimeout(() => connect(), 5000)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to connect')
     }
-  }, [url, enabled])
+  }, [url, enabled, bufferSize])
 
   const disconnect = useCallback(() => {
+    closing.current = true
     if (reconnectTimer.current) clearTimeout(reconnectTimer.current)
     ws.current?.close()
     setConnected(false)
@@ -63,6 +82,7 @@ export function useWebSocket(url: string, enabled = true) {
       disconnect()
     }
     return () => {
+      closing.current = true
       if (reconnectTimer.current) clearTimeout(reconnectTimer.current)
       ws.current?.close()
     }

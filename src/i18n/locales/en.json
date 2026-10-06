@@ -179,7 +179,18 @@
     "dataPoints": "Data Points",
     "noData": "Waiting for data...",
     "maxItems": "Max displayed items",
-    "latestData": "Latest Data"
+    "latestData": "Latest Data",
+    "msgPerSec": "msg/s",
+    "messages": "messages",
+    "pausedInfo": "Stream paused: data is still being collected, the view is frozen.",
+    "tabCharts": "Charts",
+    "tabValues": "Current values",
+    "tabRaw": "Raw stream",
+    "searchMeasurement": "Search measurement...",
+    "noNumeric": "Waiting for numeric measurements...",
+    "tooManyCharts": "Showing {{shown}} of {{total}} charts: filter by source or search to narrow down.",
+    "stale": "no updates",
+    "messageType": "Type"
   },
   "settings": {
     "title": "Settings",

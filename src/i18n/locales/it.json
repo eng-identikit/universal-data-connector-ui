@@ -179,7 +179,18 @@
     "dataPoints": "Dati",
     "noData": "In attesa di dati...",
     "maxItems": "Max elementi visualizzati",
-    "latestData": "Ultimi Dati"
+    "latestData": "Ultimi Dati",
+    "msgPerSec": "msg/s",
+    "messages": "messaggi",
+    "pausedInfo": "Stream in pausa: i dati continuano a essere raccolti, la vista è congelata.",
+    "tabCharts": "Grafici",
+    "tabValues": "Valori correnti",
+    "tabRaw": "Stream grezzo",
+    "searchMeasurement": "Cerca misura...",
+    "noNumeric": "In attesa di misure numeriche...",
+    "tooManyCharts": "Mostrati {{shown}} grafici su {{total}}: filtra per sorgente o cerca per restringere.",
+    "stale": "nessun aggiornamento",
+    "messageType": "Tipo"
   },
   "settings": {
     "title": "Impostazioni",
