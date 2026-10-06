@@ -42,8 +42,36 @@ const TYPE_DEFAULTS: Record<string, Record<string, unknown>> = {
   http: { url: 'http://localhost/data', method: 'GET', interval: 5000 },
   s7: { host: '192.168.1.1', rack: 0, slot: 1, variables: {} },
   bacnet: { address: '192.168.1.1', port: 47808 },
-  profinet: { ip: '192.168.1.1' },
-  ethercat: { interface: 'eth0' },
+  profinet: {
+    mode: 's7',
+    controllerIp: '192.168.0.1',
+    rack: 0,
+    slot: 1,
+    pollingInterval: 100,
+    devices: [
+      {
+        name: 'IO_Device_1',
+        stationName: 'et200sp-1',
+        inputs: [{ name: 'sensor_1', address: 'I0.0' }],
+        outputs: [{ name: 'valve_1', address: 'Q0.0' }],
+      },
+    ],
+  },
+  ethercat: {
+    mode: 'ads',
+    targetAmsNetId: '192.168.1.120.1.1',
+    targetAdsPort: 851,
+    masterAmsNetId: '192.168.1.120.3.1',
+    pollingInterval: 100,
+    slaves: [
+      {
+        name: 'EL1008',
+        position: 1,
+        inputs: [{ name: 'input_1', symbol: 'GVL_IO.bInput1' }],
+        outputs: [],
+      },
+    ],
+  },
   'fins-tcp': { host: '192.168.1.1', port: 9600 },
   melsec: { host: '192.168.1.1', port: 5007 },
   serial: { port: 'COM1', baudRate: 9600 },
