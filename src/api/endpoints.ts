@@ -7,8 +7,14 @@ import type {
   EntitiesResponse,
   StorageConfig,
   StorageHealthResponse,
+  StorageConfigResponse,
   StorageTestResult,
   StorageTypeInfo,
+  HistoryStatus,
+  HistorySource,
+  HistoryMeasurement,
+  HistorySeriesResponse,
+  HistoryRecordsResponse,
 } from './types'
 
 // ─── Status ──────────────────────────────────────────────────────────────────
@@ -57,6 +63,54 @@ export const getLatestData = (limit = 50, sourceId?: string) => {
   return apiClient.get<DataResponse>('/api/data/latest', { params }).then((r) => r.data)
 }
 
+// ─── History (TimescaleDB) ───────────────────────────────────────────────────
+
+export interface HistoryRange {
+  startTime: string
+  endTime: string
+}
+
+export const getHistoryStatus = () =>
+  apiClient.get<HistoryStatus>('/api/history/status').then((r) => r.data)
+
+export const getHistorySources = (range?: HistoryRange) =>
+  apiClient
+    .get<{ sources: HistorySource[] }>('/api/history/sources', { params: range })
+    .then((r) => r.data.sources)
+
+export const getHistoryMeasurements = (source: string, range?: HistoryRange) =>
+  apiClient
+    .get<{ measurements: HistoryMeasurement[] }>('/api/history/measurements', {
+      params: { source, ...range },
+    })
+    .then((r) => r.data.measurements)
+
+export const getHistorySeries = (
+  source: string,
+  measurements: string[],
+  range: HistoryRange,
+  maxPoints = 400,
+) =>
+  apiClient
+    .get<HistorySeriesResponse>('/api/history/series', {
+      params: { source, measurements: measurements.join(','), maxPoints, ...range },
+      timeout: 30000,
+    })
+    .then((r) => r.data)
+
+export const getHistoryRecords = (
+  source: string | undefined,
+  range: HistoryRange,
+  limit = 50,
+  offset = 0,
+) =>
+  apiClient
+    .get<HistoryRecordsResponse>('/api/history/records', {
+      params: { source: source || undefined, limit, offset, ...range },
+      timeout: 30000,
+    })
+    .then((r) => r.data)
+
 // ─── Mapping ─────────────────────────────────────────────────────────────────
 
 export const getMappedEntities = () =>
@@ -65,21 +119,26 @@ export const getMappedEntities = () =>
 // ─── Storage ─────────────────────────────────────────────────────────────────
 
 export const getStorageConfig = () =>
-  apiClient.get<{ storage: StorageConfig }>('/api/config/storage').then((r) => r.data)
+  apiClient.get<StorageConfigResponse>('/api/config/storage').then((r) => r.data.storage)
 
-export const updateStorageConfig = (config: StorageConfig) =>
-  apiClient.put('/api/config/storage', config).then((r) => r.data)
+/** Save without applying (applied on next reload/restart) */
+export const updateStorageConfig = (storage: StorageConfig) =>
+  apiClient.put('/api/config/storage', { storage }).then((r) => r.data)
 
 export const getStorageTypes = () =>
-  apiClient.get<{ types: StorageTypeInfo[] }>('/api/config/storage/types').then((r) => r.data)
+  apiClient
+    .get<{ types: StorageTypeInfo[] }>('/api/config/storage/types')
+    .then((r) => r.data.types)
 
+/** Non-destructive: connects, runs a health check and disconnects */
 export const testStorageConnection = (config: StorageConfig) =>
   apiClient
-    .post<StorageTestResult>('/api/config/storage/test', config)
-    .then((r) => r.data)
+    .post<StorageTestResult>('/api/config/storage/test', config, { timeout: 30000 })
+    .then((r) => r.data.test)
 
 export const getStorageHealth = () =>
-  apiClient.get<StorageHealthResponse>('/api/config/storage/health').then((r) => r.data)
+  apiClient.get<StorageHealthResponse>('/api/config/storage/health').then((r) => r.data.storage)
 
+/** Validate, test, switch the running engine to this storage and save it */
 export const configureStorage = (config: StorageConfig) =>
-  apiClient.post('/api/config/storage/configure', config).then((r) => r.data)
+  apiClient.post('/api/config/storage/configure', config, { timeout: 30000 }).then((r) => r.data)

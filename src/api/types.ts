@@ -96,6 +96,73 @@ export interface DataResponse {
   data: DataPoint[]
 }
 
+// ─── History (TimescaleDB) ───────────────────────────────────────────────────
+
+export interface HistoryStatus {
+  timestamp: string
+  available: boolean
+  configured: boolean
+  origin?: string
+  table?: string
+  recording?: boolean
+  activeStorage?: string
+  sources?: number
+  oldest?: string | null
+  newest?: string | null
+  reason?: string
+}
+
+export interface HistorySource {
+  sourceId: string
+  records: number
+  first: string
+  last: string
+}
+
+export interface HistoryMeasurement {
+  id: string
+  type: string | null
+  device: string | null
+  numeric: boolean
+}
+
+export interface HistoryPoint {
+  t: string
+  avg: number
+  min: number
+  max: number
+  last: number
+  samples: number
+}
+
+export interface HistorySeriesResponse {
+  sourceId: string
+  startTime: string
+  endTime: string
+  bucket: string
+  series: Record<string, HistoryPoint[]>
+}
+
+export interface HistoryRecord {
+  timestamp: string
+  sourceId: string
+  data: {
+    id?: string
+    type?: string
+    measurements?: { id: string; type?: string; value: unknown }[]
+    [key: string]: unknown
+  }
+}
+
+export interface HistoryRecordsResponse {
+  startTime: string
+  endTime: string
+  limit: number
+  offset: number
+  hasMore: boolean
+  records: HistoryRecord[]
+}
+
 // ─── Mapping ─────────────────────────────────────────────────────────────────
 
 export interface MappedEntity {
@@ -115,9 +182,9 @@ export interface EntitiesResponse {
 
 export interface StorageTypeInfo {
   type: string
+  name: string
   description: string
-  available: boolean
-  requiredFields: string[]
+  configSchema: Record<string, { type: string; required?: boolean; default?: unknown; description?: string }>
 }
 
 export interface StorageConfig {
@@ -125,15 +192,54 @@ export interface StorageConfig {
   config: Record<string, unknown>
 }
 
-export interface StorageHealthResponse {
-  status: string
+export interface StorageFallback {
+  reason: string
+  since: string
+}
+
+/** What the engine is actually using (may differ from the saved config while in fallback) */
+export interface StorageRuntimeInfo {
   type: string
+  configuredType: string
+  status: 'connected' | 'fallback'
   connected: boolean
-  details?: Record<string, unknown>
+  fallback: StorageFallback | null
+  retryInterval?: number
+  bufferedDataPoints: number
+}
+
+export interface StorageConfigResponse {
+  timestamp: string
+  storage: {
+    current: StorageConfig
+    alternatives: Record<string, StorageConfig>
+    runtime: StorageRuntimeInfo | null
+  }
+}
+
+export interface StorageHealth {
+  type: string
+  configuredType: string
+  status: 'healthy' | 'unhealthy' | 'fallback' | 'unavailable'
+  connected: boolean
+  fallback?: StorageFallback | null
+  health: Record<string, unknown>
+  statistics: Record<string, unknown> | null
+  lastCheck: string
+}
+
+export interface StorageHealthResponse {
+  timestamp: string
+  storage: StorageHealth
 }
 
 export interface StorageTestResult {
-  success: boolean
-  message: string
-  error?: string
+  timestamp: string
+  test: {
+    type: string
+    success: boolean
+    message: string
+    responseTime: number
+    details?: Record<string, unknown>
+  }
 }

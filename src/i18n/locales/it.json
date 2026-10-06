@@ -45,7 +45,8 @@
     "mapping": "Mapping",
     "storage": "Archiviazione",
     "liveData": "Dati Live",
-    "settings": "Impostazioni"
+    "settings": "Impostazioni",
+    "history": "Storico"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -144,7 +145,7 @@
     "database": "Database",
     "username": "Utente",
     "password": "Password",
-    "maxRecords": "Numero Massimo Record",
+    "maxRecords": "Numero massimo di punti",
     "ttl": "TTL (secondi)",
     "keyPrefix": "Prefisso Chiave",
     "table": "Nome Tabella",
@@ -154,7 +155,13 @@
     "redis": "Redis",
     "redisDesc": "Redis key-value store. Persistente con supporto TTL.",
     "timescaledb": "TimescaleDB",
-    "timescaledbDesc": "Database time-series PostgreSQL. Ideale per grandi dataset."
+    "timescaledbDesc": "Database time-series PostgreSQL. Ideale per grandi dataset.",
+    "fallbackTitle": "{{type}} non raggiungibile: i dati vengono tenuti in memoria",
+    "fallbackSince": "dal",
+    "fallbackRetry": "nuovo tentativo ogni {{seconds}}s, i dati in buffer verranno trasferiti automaticamente",
+    "activeNow": "attivo ora: {{type}}",
+    "openHistory": "Apri Storico",
+    "statusFallback": "Fallback (memoria)"
   },
   "liveData": {
     "title": "Dati Live",
@@ -195,5 +202,47 @@
     "about": "Informazioni",
     "version": "Versione",
     "appDescription": "Universal Data Connector UI fornisce un'interfaccia web per monitorare e configurare il backend UDC."
+  },
+  "history": {
+    "title": "Storico",
+    "source": "Sorgente",
+    "range": "Intervallo",
+    "from": "Da",
+    "to": "A",
+    "presets": {
+      "15m": "Ultimi 15 minuti",
+      "1h": "Ultima ora",
+      "6h": "Ultime 6 ore",
+      "24h": "Ultime 24 ore",
+      "7d": "Ultimi 7 giorni",
+      "30d": "Ultimi 30 giorni",
+      "custom": "Personalizzato"
+    },
+    "panBack": "Indietro nel tempo",
+    "panForward": "Avanti nel tempo",
+    "zoomOut": "Riduci zoom",
+    "back": "Intervallo precedente",
+    "measurements": "Misure",
+    "selectMeasurements": "Seleziona una o più misure da visualizzare",
+    "noMeasurements": "Nessuna misura registrata per questa sorgente nell'intervallo selezionato",
+    "noSources": "Nessun dato storico registrato",
+    "noPoints": "Nessun dato numerico in questo intervallo",
+    "noRecords": "Nessun record in questo intervallo",
+    "chartTab": "Grafici",
+    "recordsTab": "Record",
+    "zoomHint": "Trascina su un grafico per ingrandire l'intervallo",
+    "lastValue": "Ultimo",
+    "bucket": "Risoluzione",
+    "avg": "Media",
+    "min": "min",
+    "max": "max",
+    "samples": "campioni",
+    "rawJson": "JSON grezzo",
+    "recording": "TimescaleDB · in registrazione",
+    "notRecording": "TimescaleDB · non in registrazione (storage attivo: {{storage}})",
+    "dataRange": "Dati disponibili",
+    "unavailable": "TimescaleDB non raggiungibile",
+    "notConfigured": "TimescaleDB non è configurato. Configuralo in Archiviazione per registrare e consultare lo storico.",
+    "goToStorage": "Apri Archiviazione"
   }
 }

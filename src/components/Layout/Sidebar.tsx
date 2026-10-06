@@ -16,6 +16,7 @@ import DeviceHubIcon from '@mui/icons-material/DeviceHub'
 import AccountTreeIcon from '@mui/icons-material/AccountTree'
 import StorageIcon from '@mui/icons-material/Storage'
 import StreamIcon from '@mui/icons-material/Stream'
+import TimelineIcon from '@mui/icons-material/Timeline'
 import SettingsIcon from '@mui/icons-material/Settings'
 import HubIcon from '@mui/icons-material/Hub'
 
@@ -25,6 +26,7 @@ const navItems = [
   { path: '/mapping', labelKey: 'nav.mapping', icon: <AccountTreeIcon /> },
   { path: '/storage', labelKey: 'nav.storage', icon: <StorageIcon /> },
   { path: '/live-data', labelKey: 'nav.liveData', icon: <StreamIcon /> },
+  { path: '/history', labelKey: 'nav.history', icon: <TimelineIcon /> },
 ]
 
 export default function Sidebar() {

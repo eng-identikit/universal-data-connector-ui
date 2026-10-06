@@ -9,6 +9,7 @@ import Connectors from './pages/Connectors'
 import Mapping from './pages/Mapping'
 import Storage from './pages/Storage'
 import LiveData from './pages/LiveData'
+import History from './pages/History'
 import Settings from './pages/Settings'
 
 function AppContent() {
@@ -26,6 +27,7 @@ function AppContent() {
             <Route path="/mapping" element={<Mapping />} />
             <Route path="/storage" element={<Storage />} />
             <Route path="/live-data" element={<LiveData />} />
+            <Route path="/history" element={<History />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

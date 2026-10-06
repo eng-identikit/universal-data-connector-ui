@@ -19,14 +19,14 @@ import {
 import StorageIcon from '@mui/icons-material/Storage'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import ErrorIcon from '@mui/icons-material/Error'
+import { useNavigate } from 'react-router-dom'
 import {
   getStorageConfig,
-  getStorageTypes,
   getStorageHealth,
   testStorageConnection,
   configureStorage,
 } from '../../api/endpoints'
-import type { StorageConfig, StorageTypeInfo, StorageHealthResponse } from '../../api/types'
+import type { StorageConfig, StorageHealth, StorageRuntimeInfo } from '../../api/types'
 
 const STORAGE_ICONS: Record<string, string> = {
   memory: '🧠',
@@ -37,9 +37,11 @@ const STORAGE_ICONS: Record<string, string> = {
 export default function Storage() {
   const { t } = useTranslation()
 
+  const navigate = useNavigate()
   const [current, setCurrent] = useState<StorageConfig | null>(null)
-  const [health, setHealth] = useState<StorageHealthResponse | null>(null)
-  const [types, setTypes] = useState<StorageTypeInfo[]>([])
+  const [alternatives, setAlternatives] = useState<Record<string, StorageConfig>>({})
+  const [runtime, setRuntime] = useState<StorageRuntimeInfo | null>(null)
+  const [health, setHealth] = useState<StorageHealth | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -60,8 +62,8 @@ export default function Storage() {
     setSnack({ open: true, msg, severity })
 
   const defaultConfigs: Record<string, Record<string, unknown>> = {
-    memory: { maxRecords: 10000, ttl: 604800000 },
-    redis: { host: 'localhost', port: 6379, password: '', db: 0, keyPrefix: 'udc:', ttl: 86400 },
+    memory: { maxDataPoints: 10000 },
+    redis: { host: 'localhost', port: 6379, password: '', database: 0, keyPrefix: 'udc:', ttl: 86400 },
     timescaledb: {
       host: 'localhost',
       port: 5432,
@@ -69,25 +71,25 @@ export default function Storage() {
       username: 'postgres',
       password: '',
       table: 'sensor_data',
+      compression: false,
+      retentionPolicy: null,
     },
   }
 
   const fetchAll = useCallback(async () => {
     try {
       setError(null)
-      const [configRes, typesRes, healthRes] = await Promise.allSettled([
-        getStorageConfig(),
-        getStorageTypes(),
-        getStorageHealth(),
-      ])
+      const [configRes, healthRes] = await Promise.allSettled([getStorageConfig(), getStorageHealth()])
 
       if (configRes.status === 'fulfilled') {
-        setCurrent(configRes.value.storage)
-        setSelectedType(configRes.value.storage?.type ?? 'memory')
-        setConfigJson(JSON.stringify(configRes.value.storage?.config ?? {}, null, 2))
-      }
-      if (typesRes.status === 'fulfilled') {
-        setTypes(typesRes.value.types ?? [])
+        const { current: cur, alternatives: alts, runtime: rt } = configRes.value
+        setCurrent(cur)
+        setAlternatives(alts ?? {})
+        setRuntime(rt)
+        setSelectedType(cur?.type ?? 'memory')
+        setConfigJson(JSON.stringify(cur?.config ?? {}, null, 2))
+      } else {
+        setError(configRes.reason instanceof Error ? configRes.reason.message : 'Failed to load storage info')
       }
       if (healthRes.status === 'fulfilled') {
         setHealth(healthRes.value)
@@ -105,7 +107,13 @@ export default function Storage() {
 
   const handleTypeChange = (newType: string) => {
     setSelectedType(newType)
-    setConfigJson(JSON.stringify(defaultConfigs[newType] ?? {}, null, 2))
+    // Prefer the saved configuration for this type, then the preset, then defaults
+    const saved =
+      (current?.type === newType ? current.config : undefined) ??
+      alternatives[newType]?.config ??
+      defaultConfigs[newType] ??
+      {}
+    setConfigJson(JSON.stringify(saved, null, 2))
     setJsonError(null)
   }
 
@@ -127,7 +135,7 @@ export default function Storage() {
     try {
       const result = await testStorageConnection({ type: selectedType, config })
       if (result.success) {
-        showSnack(t('storage.testSuccess'))
+        showSnack(`${t('storage.testSuccess')} (${result.responseTime} ms)`)
       } else {
         showSnack(result.message || t('storage.testFailed'), 'error')
       }
@@ -171,6 +179,18 @@ export default function Storage() {
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
+      {runtime?.fallback && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          <Typography variant="body2" fontWeight={600}>
+            {t('storage.fallbackTitle', { type: runtime.configuredType })}
+          </Typography>
+          <Typography variant="body2">
+            {runtime.fallback.reason} · {t('storage.fallbackSince')} {new Date(runtime.fallback.since).toLocaleString()}
+            {runtime.retryInterval ? ` · ${t('storage.fallbackRetry', { seconds: Math.round(runtime.retryInterval / 1000) })}` : ''}
+          </Typography>
+        </Alert>
+      )}
+
       {/* Current status card */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={12} md={6}>
@@ -184,10 +204,18 @@ export default function Storage() {
               </Box>
               {current ? (
                 <Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, flexWrap: 'wrap' }}>
                     <Typography variant="h6">
                       {STORAGE_ICONS[current.type] ?? '💾'} {current.type}
                     </Typography>
+                    {runtime && runtime.type !== current.type && (
+                      <Chip size="small" color="warning" variant="outlined" label={t('storage.activeNow', { type: runtime.type })} />
+                    )}
+                    {current.type === 'timescaledb' && (
+                      <Button size="small" sx={{ ml: 'auto' }} onClick={() => navigate('/history')}>
+                        {t('storage.openHistory')}
+                      </Button>
+                    )}
                   </Box>
                   <Box
                     sx={{
@@ -223,13 +251,19 @@ export default function Storage() {
                   {t('storage.health')}
                 </Typography>
                 <Chip
-                  label={health?.connected ? t('connectorStatus.connected') : t('connectorStatus.disconnected')}
-                  color={health?.connected ? 'success' : 'error'}
+                  label={
+                    health?.status === 'fallback'
+                      ? t('storage.statusFallback')
+                      : health?.connected
+                        ? t('connectorStatus.connected')
+                        : t('connectorStatus.disconnected')
+                  }
+                  color={health?.status === 'fallback' ? 'warning' : health?.connected ? 'success' : 'error'}
                   size="small"
                   sx={{ ml: 'auto' }}
                 />
               </Box>
-              {health?.details && (
+              {health?.statistics && (
                 <Box
                   sx={{
                     fontFamily: 'monospace',
@@ -239,7 +273,7 @@ export default function Storage() {
                     p: 1.5,
                   }}
                 >
-                  {JSON.stringify(health.details, null, 2)}
+                  {JSON.stringify(health.statistics, null, 2)}
                 </Box>
               )}
             </CardContent>

@@ -45,7 +45,8 @@
     "mapping": "Mapping",
     "storage": "Storage",
     "liveData": "Live Data",
-    "settings": "Settings"
+    "settings": "Settings",
+    "history": "History"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -144,7 +145,7 @@
     "database": "Database",
     "username": "Username",
     "password": "Password",
-    "maxRecords": "Max Records",
+    "maxRecords": "Max data points",
     "ttl": "TTL (seconds)",
     "keyPrefix": "Key Prefix",
     "table": "Table Name",
@@ -154,7 +155,13 @@
     "redis": "Redis",
     "redisDesc": "Redis key-value store. Persistent with TTL support.",
     "timescaledb": "TimescaleDB",
-    "timescaledbDesc": "PostgreSQL time-series database. Best for large datasets."
+    "timescaledbDesc": "PostgreSQL time-series database. Best for large datasets.",
+    "fallbackTitle": "{{type}} is unreachable: data is being kept in memory",
+    "fallbackSince": "since",
+    "fallbackRetry": "retrying every {{seconds}}s, buffered data will be moved there automatically",
+    "activeNow": "active now: {{type}}",
+    "openHistory": "Open History",
+    "statusFallback": "Fallback (memory)"
   },
   "liveData": {
     "title": "Live Data",
@@ -195,5 +202,47 @@
     "about": "About",
     "version": "Version",
     "appDescription": "Universal Data Connector UI provides a web interface to monitor and configure the UDC backend."
+  },
+  "history": {
+    "title": "History",
+    "source": "Source",
+    "range": "Time range",
+    "from": "From",
+    "to": "To",
+    "presets": {
+      "15m": "Last 15 minutes",
+      "1h": "Last hour",
+      "6h": "Last 6 hours",
+      "24h": "Last 24 hours",
+      "7d": "Last 7 days",
+      "30d": "Last 30 days",
+      "custom": "Custom"
+    },
+    "panBack": "Move back",
+    "panForward": "Move forward",
+    "zoomOut": "Zoom out",
+    "back": "Previous range",
+    "measurements": "Measurements",
+    "selectMeasurements": "Select one or more measurements to plot",
+    "noMeasurements": "No measurements recorded for this source in the selected range",
+    "noSources": "No historical data recorded yet",
+    "noPoints": "No numeric data in this range",
+    "noRecords": "No records in this range",
+    "chartTab": "Charts",
+    "recordsTab": "Records",
+    "zoomHint": "Drag across a chart to zoom into that interval",
+    "lastValue": "Last",
+    "bucket": "Resolution",
+    "avg": "Average",
+    "min": "min",
+    "max": "max",
+    "samples": "samples",
+    "rawJson": "Raw JSON",
+    "recording": "TimescaleDB · recording",
+    "notRecording": "TimescaleDB · not recording (active storage: {{storage}})",
+    "dataRange": "Data available",
+    "unavailable": "TimescaleDB is not reachable",
+    "notConfigured": "TimescaleDB is not configured. Configure it in Storage to record and browse historical data.",
+    "goToStorage": "Open Storage"
   }
 }
