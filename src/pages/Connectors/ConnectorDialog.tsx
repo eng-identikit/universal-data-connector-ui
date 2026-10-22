@@ -32,6 +32,7 @@ const CONNECTOR_TYPES = [
   'serial',
   'aas',
   'cip',
+  'dds',
 ]
 
 // Default config fields per type
@@ -77,6 +78,13 @@ const TYPE_DEFAULTS: Record<string, Record<string, unknown>> = {
   serial: { port: 'COM1', baudRate: 9600 },
   aas: { url: 'http://localhost:4001' },
   cip: { host: '192.168.1.1' },
+  dds: {
+    mode: 'connector',
+    configFile: 'config/dds/UdcDdsExample.xml',
+    participant: 'UdcParticipantLibrary::UdcParticipant',
+    inputs: [{ name: 'sensors', reader: 'UdcSubscriber::SensorReader', deviceIdField: 'sensor_id' }],
+    outputs: [{ name: 'setpoint', writer: 'UdcPublisher::SetpointWriter' }],
+  },
 }
 
 interface ConnectorDialogProps {
