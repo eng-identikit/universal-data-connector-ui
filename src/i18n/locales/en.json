@@ -71,7 +71,11 @@
     "nodeVersion": "Node Version",
     "platform": "Platform",
     "pid": "PID",
-    "serverNotReachable": "Server not reachable"
+    "serverNotReachable": "Server not reachable",
+    "typesCount": "{{n}} types",
+    "failingCount": "{{n}} failing",
+    "allHealthy": "all active",
+    "dlqHelp": "undelivered notifications"
   },
   "connectors": {
     "title": "Connectors",
@@ -375,7 +379,8 @@
       "members": "Members",
       "apikeys": "API keys",
       "tenants": "Tenants",
-      "users": "Users"
+      "users": "Users",
+      "cluster": "Cluster"
     },
     "tenant": "Tenant",
     "role": "Role",
@@ -557,5 +562,29 @@
     "pick": "Set on map",
     "pickHelp": "Click on the map to set the entity location.",
     "remove": "Remove location"
+  },
+  "cluster": {
+    "single": "Single instance: set BROKER_CLUSTER=true (with NATS) to spread the work over several instances.",
+    "singleHelp": "Without clustering this instance runs every connector and evaluates every subscription.",
+    "help": "The {{partitions}} subscription partitions, the ingest partitions and the connectors are distributed through leases renewed every {{tick}} s; if an instance fails, the others take over within about 3 renewals.",
+    "instances": "Instances",
+    "instance": "Instance",
+    "alive": "alive",
+    "this": "this",
+    "heartbeat": "Heartbeat",
+    "subPartitions": "Subscription part.",
+    "ingestPartitions": "Ingest part.",
+    "connectors": "Connectors",
+    "loop": "Event loop p99",
+    "loopHelp": "Event-loop delay: above 200 ms the instance is saturated",
+    "apply": "Ingest apply",
+    "memory": "Memory",
+    "streamClients": "Stream clients",
+    "ingestBacklog": "Ingest backlog",
+    "notifyBacklog": "Notification backlog",
+    "inFlight": "{{n}} in flight",
+    "ingested": "Updates applied (this instance)",
+    "rejected": "{{n}} rejected",
+    "lastIngestError": "Last ingest error"
   }
 }

@@ -26,6 +26,7 @@ import DataUsageIcon from '@mui/icons-material/DataUsage'
 import DeviceHubIcon from '@mui/icons-material/DeviceHub'
 import StatusChip from '../../components/StatusChip'
 import { useUDCStatus } from '../../hooks/useUDCStatus'
+import BrokerSummary from './BrokerSummary'
 
 function formatUptime(seconds: number): string {
   if (!seconds) return '—'
@@ -113,6 +114,9 @@ export default function Dashboard() {
           {t('dashboard.serverNotReachable')}: {error}
         </Alert>
       )}
+
+      {/* Broker (selected tenant) */}
+      <BrokerSummary />
 
       {/* Stat cards */}
       <Grid container spacing={2} sx={{ mb: 3 }}>

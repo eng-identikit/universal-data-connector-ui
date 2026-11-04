@@ -4,105 +4,80 @@
 
 ## Overview
 
-Web-based management interface for the [Universal Data Connector](../universal-data-connector/README.md) (UDC). It lets you monitor, configure and control a running UDC instance from the browser: manage data source connectors, inspect the mapped devices, configure storage, and watch live data flowing through the system.
+Web interface for the [Universal Data Connector](../universal-data-connector/README.md) (UDC) context broker. From the browser you can:
+- browse and edit entities, on a table or on a map;
+- manage subscriptions, follow the attribute history and send commands to devices;
+- configure connectors and administer tenants, users, API keys and the cluster.
 
-Built with **React 18 + TypeScript**, **Vite**, **Material UI (MUI v5)** and **Recharts**.
+Built with **React 18 + TypeScript**, **Vite**, **Material UI (MUI v5)**, **Recharts** and **Leaflet**.
 
 ## 🎯 Features
 
-- **Dashboard** — overall system status, sources health and key metrics at a glance
-- **Connectors** — create, edit, delete, start/stop/restart data sources (OPC UA, Modbus, MQTT, HTTP, PROFINET, EtherCAT, ...), with ready-made configuration templates
-- **Mapping** — browse the devices/entities produced by the UDC mapping engine
-- **Storage** — configure the storage adapter (Memory, Redis, TimescaleDB), test the connection and check its health. Shows the storage actually in use and warns when the backend has fallen back to in-memory storage
-- **Live Data** — real-time dashboard fed by the WebSocket stream:
-  - **Charts**: one rolling chart per numeric measurement (1 / 5 / 15 min window; booleans drawn as 0/1 steps)
-  - **Current values**: one tile per measurement with its latest value and unit, dimmed when it has not updated for 10 s
-  - **Raw stream**: the last messages as received
-  - filter by source, search by measurement, pause (the view freezes but data keeps being collected), message rate and source status
-- **History** — browse the data recorded in TimescaleDB: time range presets or custom range, drag-to-zoom and pan, one chart per measurement (average line with min/max band, synced crosshair) and paginated raw records
-- **Settings** — UI preferences: language and light/dark theme
-- **Internationalization** — English and Italian via i18next (default: Italian, stored in `localStorage` under `udc-language`)
+- **Login and tenants**: JWT session with automatic refresh, a tenant selector in the top bar, and pages that adapt to the role (viewer, operator, admin, superadmin).
+- **Dashboard**: broker figures for the tenant (entities, subscriptions, deliveries, DLQ) plus engine status.
+- **Entities**: table with filters (type, id pattern, related to, depth, direction, order) and a **map** view of the visible area. Creation from a form or from JSON.
+- **Entity detail**:
+  - attributes, with an editor per type, metadata and command configuration;
+  - **history** charts (average with min–max band, CSV export, table view);
+  - relationship trees in both directions;
+  - **location** on the map, settable with a click;
+  - **commands** to writable attributes, with their status;
+  - the raw JSON.
+- **Subscriptions**:
+  - list with status and statistics;
+  - 4-step wizard (entities with preview, trigger with deadband/throttle/periodic, filter with a visual builder and server-side validation, channel);
+  - detail with test, pause/resume, DLQ with replay and purge, and live notifications for websocket subscriptions.
+- **History**: attribute history of any entity.
+- **Live Data**: realtime charts and values from the authenticated broker stream.
+- **Connectors / Mapping / Storage**: connector configuration (including target tenant and entity id prefix), mapped devices and the raw data buffer.
+- **Administration**: tenant members, API keys (shown once), tenants and users (superadmin), **cluster** (instances, partitions, connectors, event-loop delay, queue backlogs).
+- **Settings**: API URL, map tile server, language (IT/EN) and theme.
 
 ## 📋 Requirements
 
 - Node.js 18+
-- A running [Universal Data Connector](../universal-data-connector/README.md) backend (REST API on port `3000` by default)
+- A running UDC backend (`docker compose up -d` in the backend repo starts everything, this UI included, on http://localhost:8080)
 
 ## 🚀 Getting Started
 
 ```bash
-# Install dependencies
 npm install
-
-# Start the development server (http://localhost:5173)
-npm run dev
+npm run dev        # http://localhost:5173
 ```
 
-The Vite dev server proxies `/api` and `/health` requests to the UDC backend at `http://localhost:3000` (see [vite.config.ts](./vite.config.ts)), so no CORS configuration is needed during development.
+The Vite dev server proxies `/api` (including the WebSocket stream) and `/health` to `http://localhost:3000`, so the API URL in Settings can stay empty (same origin).
 
-### Production Build
+### Production
 
 ```bash
-# Type-check and build to dist/
-npm run build
-
-# Preview the production build locally
-npm run preview
+npm run build      # type-check and build to dist/
 ```
+
+The `Dockerfile` serves the build with nginx and proxies `/api` and `/api/v2/stream` to `${UDC_BACKEND}` (default `udc:3000`, set by Compose and by the Helm chart).
 
 ## 📁 Project Structure
 
 ```
-universal-data-connector-ui/
-├── index.html
-├── vite.config.ts            # Dev server + proxy to UDC backend
-└── src/
-    ├── api/
-    │   ├── client.ts         # Axios instance
-    │   ├── endpoints.ts      # Typed API calls (status, sources, data, history, mapping, storage)
-    │   └── types.ts          # API response types
-    ├── components/
-    │   ├── Layout/           # AppLayout, Sidebar, TopBar
-    │   ├── ConfirmDialog.tsx
-    │   └── StatusChip.tsx
-    ├── context/
-    │   └── AppContext.tsx    # Global app state (theme, ...)
-    ├── hooks/
-    │   ├── useUDCStatus.ts   # Polls backend status
-    │   └── useWebSocket.ts   # WebSocket stream with auto-reconnect
-    ├── i18n/
-    │   ├── index.ts          # i18next setup
-    │   └── locales/          # en.json, it.json
-    ├── pages/
-    │   ├── Dashboard/
-    │   ├── Connectors/       # Source list + create/edit dialog
-    │   ├── Mapping/
-    │   ├── Storage/
-    │   ├── LiveData/         # Real-time charts, current values, raw stream
-│   ├── History/          # TimescaleDB history browser
-    │   └── Settings/
-    ├── theme/                # MUI light/dark themes
-    ├── App.tsx               # Routes
-    └── main.tsx              # Entry point
+src/
+├── api/
+│   ├── client.ts         # Axios instance: base URL, token, X-Tenant, refresh on 401, stream URL
+│   ├── session.ts        # Tokens and selected tenant in localStorage
+│   ├── broker.ts         # Broker API: entities, subscriptions, history, commands, admin, cluster
+│   ├── endpoints.ts      # System API (/api/v2/system): status, sources, mapping, storage
+│   └── types.ts
+├── components/           # Layout (sidebar, top bar, user menu), EntityHistory, EntityMap, dialogs
+├── context/              # AppContext (theme, language, API URL), AuthContext (session, tenant, role)
+├── hooks/                # useBrokerStream (authenticated WebSocket), useUDCStatus
+├── i18n/locales/         # it.json, en.json
+└── pages/                # Login, Dashboard, Entities, Subscriptions, History, LiveData,
+                          # Connectors, Mapping, Storage, Admin, Settings
 ```
 
-## 🔌 Backend API Used
+## 🔌 Backend API
 
-The UI talks to the UDC REST API:
-
-| Area | Endpoints |
-|------|-----------|
-| Status | `GET /api/status`, `GET /api/status/health` |
-| Sources | `GET /api/sources`, `POST /api/sources/:id/start|stop|restart` |
-| Sources CRUD | `POST/PUT/DELETE /api/config/sources[/:id]`, `POST /api/config/reload` |
-| Data | `GET /api/data/latest?limit=&source=` |
-| History | `GET /api/history/status`, `GET /api/history/sources`, `GET /api/history/measurements`, `GET /api/history/series`, `GET /api/history/records` |
-| Mapping | `GET /api/mapping/entities` |
-| Storage | `GET/PUT /api/config/storage`, `GET /api/config/storage/types`, `POST /api/config/storage/test`, `GET /api/config/storage/health`, `POST /api/config/storage/configure` |
-
-Live data uses the backend WebSocket (`ws://<host>:3001`, the API URL from Settings with port `3000` replaced by `3001`) with automatic reconnection. The WebSocket is not proxied by Vite, so port `3001` must be reachable from the browser. Message format: see [API documentation](../universal-data-connector/docs/API.md#websocket-real-time-stream).
-
-The History page needs TimescaleDB configured in the backend (as the active storage or under `alternatives.timescaledb` in `config/storage.json`).
+- **Broker API** (`/api/v2`): see the [broker guide](../universal-data-connector/docs/Broker.md).
+- **System API** (`/api/v2/system`): see the [API documentation](../universal-data-connector/docs/API.md).
+- **Live data**: `ws(s)://<host>/api/v2/stream?access_token=…&tenant=…`. On close code `4001` (token expired) the UI refreshes the token and reconnects.
 
 ## 🛠️ Tech Stack
 
@@ -114,6 +89,7 @@ The History page needs TimescaleDB configured in the backend (as the active stor
 | Routing | React Router v6 |
 | HTTP client | Axios |
 | Charts | Recharts |
+| Maps | Leaflet + react-leaflet |
 | i18n | i18next + react-i18next |
 
 ---

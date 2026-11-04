@@ -6,8 +6,9 @@ import MembersTab from './MembersTab'
 import ApiKeysTab from './ApiKeysTab'
 import TenantsTab from './TenantsTab'
 import UsersTab from './UsersTab'
+import ClusterTab from './ClusterTab'
 
-type TabKey = 'members' | 'apikeys' | 'tenants' | 'users'
+type TabKey = 'members' | 'apikeys' | 'tenants' | 'users' | 'cluster'
 
 export default function Admin() {
   const { t } = useTranslation()
@@ -17,7 +18,7 @@ export default function Admin() {
 
   const tabs: TabKey[] = [
     ...(isTenantAdmin && tenant ? (['members', 'apikeys'] as TabKey[]) : []),
-    ...(isSuperadmin ? (['tenants', 'users'] as TabKey[]) : []),
+    ...(isSuperadmin ? (['tenants', 'users', 'cluster'] as TabKey[]) : []),
   ]
   const [selected, setSelected] = useState<TabKey | null>(null)
   const tab = selected && tabs.includes(selected) ? selected : tabs[0]
@@ -44,6 +45,7 @@ export default function Admin() {
           {tab === 'apikeys' && tenant && <ApiKeysTab tenant={tenant} />}
           {tab === 'tenants' && <TenantsTab />}
           {tab === 'users' && <UsersTab />}
+          {tab === 'cluster' && <ClusterTab />}
         </CardContent>
       </Card>
     </Box>

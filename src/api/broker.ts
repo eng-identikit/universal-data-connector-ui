@@ -439,3 +439,38 @@ export const sendCommand = (id: string, attr: string, value: unknown) =>
 
 export const listCommands = (params: { entityId?: string; status?: CommandStatus; limit?: number } = {}) =>
   apiClient.get<{ commands: Command[] }>(`${V2}/commands`, { params }).then((r) => r.data.commands)
+
+// ─── Cluster (superadmin) ────────────────────────────────────────────────────
+
+export interface ClusterInstance {
+  id: string
+  host: string
+  alive: boolean
+  startedAt: string | null
+  heartbeatAt: string
+  info: {
+    partitions?: number
+    connectors?: string[]
+    loopDelayP50Ms?: number
+    loopDelayP99Ms?: number
+    memoryMb?: number
+    stream?: { clients: number; dropped: number }
+    ingest?: { applyMsAvg: number | null; written: number; rejected: number }
+  }
+}
+
+export interface ClusterStatus {
+  enabled: boolean
+  self: string
+  partitions?: number
+  tickMs?: number
+  instances: ClusterInstance[]
+  leases: { resource: string; owner: string; valid: boolean; acquiredAt: string; expiresAt: string }[]
+  queues: {
+    notify: { pending: number; inFlight: number; redelivered?: number; retrying?: number } | null
+    ingest: { pending: number; inFlight: number; redelivered?: number; partitions?: number } | null
+    ingestStats: { received: number; published: number; written: number; skipped: number; rejected: number; lastError: string | null }
+  }
+}
+
+export const getCluster = () => apiClient.get<ClusterStatus>(`${V2}/cluster`).then((r) => r.data)

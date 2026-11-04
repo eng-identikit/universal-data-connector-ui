@@ -71,7 +71,11 @@
     "nodeVersion": "Versione Node",
     "platform": "Piattaforma",
     "pid": "PID",
-    "serverNotReachable": "Server non raggiungibile"
+    "serverNotReachable": "Server non raggiungibile",
+    "typesCount": "{{n}} tipi",
+    "failingCount": "{{n}} in errore",
+    "allHealthy": "tutte attive",
+    "dlqHelp": "notifiche non consegnate"
   },
   "connectors": {
     "title": "Connettori",
@@ -375,7 +379,8 @@
       "members": "Membri",
       "apikeys": "API key",
       "tenants": "Tenant",
-      "users": "Utenti"
+      "users": "Utenti",
+      "cluster": "Cluster"
     },
     "tenant": "Tenant",
     "role": "Ruolo",
@@ -557,5 +562,29 @@
     "pick": "Imposta sulla mappa",
     "pickHelp": "Clicca sulla mappa per impostare la posizione dell'entità.",
     "remove": "Rimuovi posizione"
+  },
+  "cluster": {
+    "single": "Istanza singola: imposta BROKER_CLUSTER=true (con NATS) per distribuire il lavoro su più istanze.",
+    "singleHelp": "Senza cluster questa istanza esegue tutti i connettori e valuta tutte le subscription.",
+    "help": "Le {{partitions}} partizioni delle subscription, le partizioni di ingest e i connettori sono distribuiti tramite lease rinnovati ogni {{tick}} s; se un'istanza cade, le altre li riprendono entro circa 3 rinnovi.",
+    "instances": "Istanze",
+    "instance": "Istanza",
+    "alive": "attive",
+    "this": "questa",
+    "heartbeat": "Heartbeat",
+    "subPartitions": "Part. subscription",
+    "ingestPartitions": "Part. ingest",
+    "connectors": "Connettori",
+    "loop": "Event loop p99",
+    "loopHelp": "Ritardo dell'event loop: sopra 200 ms l'istanza è satura",
+    "apply": "Apply ingest",
+    "memory": "Memoria",
+    "streamClients": "Client stream",
+    "ingestBacklog": "Backlog ingest",
+    "notifyBacklog": "Backlog notifiche",
+    "inFlight": "{{n}} in elaborazione",
+    "ingested": "Update applicati (questa istanza)",
+    "rejected": "{{n}} rifiutati",
+    "lastIngestError": "Ultimo errore di ingest"
   }
 }

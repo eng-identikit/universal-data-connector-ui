@@ -4,116 +4,92 @@
 
 ## Panoramica
 
-Interfaccia web di gestione per lo [Universal Data Connector](../universal-data-connector/README.it.md) (UDC). Permette di monitorare, configurare e controllare un'istanza UDC in esecuzione dal browser: gestire i connettori alle sorgenti dati, ispezionare i dispositivi mappati, configurare lo storage e osservare i dati in tempo reale che attraversano il sistema.
+Interfaccia web per il context broker [Universal Data Connector](../universal-data-connector/README.it.md) (UDC). Dal browser puoi:
+- consultare e modificare le entità, in tabella o su mappa;
+- gestire le subscription, seguire lo storico degli attributi e inviare comandi ai dispositivi;
+- configurare i connettori e amministrare tenant, utenti, API key e cluster.
 
-Realizzata con **React 18 + TypeScript**, **Vite**, **Material UI (MUI v5)** e **Recharts**.
+Realizzata con **React 18 + TypeScript**, **Vite**, **Material UI (MUI v5)**, **Recharts** e **Leaflet**.
 
 ## 🎯 Funzionalità
 
-- **Dashboard** — stato generale del sistema, salute delle sorgenti e metriche principali a colpo d'occhio
-- **Connectors** — creazione, modifica, eliminazione, start/stop/restart delle sorgenti dati (OPC UA, Modbus, MQTT, HTTP, PROFINET, EtherCAT, ...), con template di configurazione pronti
-- **Mapping** — esplorazione dei dispositivi/entità prodotti dal mapping engine di UDC
-- **Storage** — configurazione dell'adapter di storage (Memory, Redis, TimescaleDB), test della connessione e verifica dello stato. Mostra lo storage effettivamente in uso e avvisa quando il backend è passato al fallback in memoria
-- **Live Data** — dashboard in tempo reale alimentata dallo stream WebSocket:
-  - **Grafici**: un grafico scorrevole per ogni misura numerica (finestra 1 / 5 / 15 min; i booleani sono disegnati a gradini 0/1)
-  - **Valori correnti**: un riquadro per misura con ultimo valore e unità, attenuato se non si aggiorna da 10 s
-  - **Stream grezzo**: gli ultimi messaggi così come arrivano
-  - filtro per sorgente, ricerca per misura, pausa (la vista si congela ma i dati continuano a essere raccolti), frequenza dei messaggi e stato delle sorgenti
-- **History** — consultazione dei dati registrati in TimescaleDB: intervalli predefiniti o personalizzati, zoom trascinando e spostamento, un grafico per misura (linea della media con banda min/max, cursore sincronizzato) e record grezzi paginati
-- **Settings** — preferenze UI: lingua e tema chiaro/scuro
-- **Internazionalizzazione** — inglese e italiano tramite i18next (default: italiano, salvato in `localStorage` con chiave `udc-language`)
+- **Login e tenant**: sessione JWT con rinnovo automatico, selettore del tenant nella barra in alto, pagine che si adattano al ruolo (viewer, operator, admin, superadmin).
+- **Dashboard**: numeri del broker per il tenant (entità, subscription, consegne, DLQ) e stato del motore.
+- **Entità**: tabella con filtri (tipo, pattern dell'id, collegate a, profondità, direzione, ordinamento) e vista **mappa** dell'area visibile. Creazione da modulo o da JSON.
+- **Dettaglio entità**:
+  - attributi, con un editor per tipo, metadata e configurazione del comando;
+  - grafici dello **storico** (media con banda min–max, esportazione CSV, vista tabella);
+  - alberi delle relazioni in entrambe le direzioni;
+  - **posizione** sulla mappa, impostabile con un clic;
+  - **comandi** agli attributi scrivibili, con il loro stato;
+  - il JSON completo.
+- **Subscription**:
+  - elenco con stato e statistiche;
+  - wizard in 4 passi (entità con anteprima, trigger con deadband/throttling/invio periodico, filtro con costruttore visuale e validazione lato server, canale);
+  - dettaglio con test, pausa/ripresa, DLQ con reinvio e svuotamento, e notifiche live per le subscription websocket.
+- **Storico**: storico degli attributi di qualsiasi entità.
+- **Dati Live**: grafici e valori in tempo reale dallo stream autenticato del broker.
+- **Connettori / Mapping / Archiviazione**: configurazione dei connettori (compresi tenant di destinazione e prefisso dell'id entità), dispositivi mappati e buffer dei dati grezzi.
+- **Amministrazione**: membri del tenant, API key (mostrate una sola volta), tenant e utenti (superadmin), **cluster** (istanze, partizioni, connettori, ritardo dell'event loop, backlog delle code).
+- **Impostazioni**: URL dell'API, tile server della mappa, lingua (IT/EN) e tema.
 
 ## 📋 Requisiti
 
 - Node.js 18+
-- Un backend [Universal Data Connector](../universal-data-connector/README.it.md) in esecuzione (REST API sulla porta `3000` di default)
+- Un backend UDC in esecuzione (`docker compose up -d` nel repo del backend avvia tutto, compresa questa UI, su http://localhost:8080)
 
-## 🚀 Avvio Rapido
+## 🚀 Avvio
 
 ```bash
-# Installa le dipendenze
 npm install
-
-# Avvia il dev server (http://localhost:5173)
-npm run dev
+npm run dev        # http://localhost:5173
 ```
 
-Il dev server di Vite inoltra le richieste `/api` e `/health` al backend UDC su `http://localhost:3000` (vedi [vite.config.ts](./vite.config.ts)), quindi non serve alcuna configurazione CORS durante lo sviluppo.
+Il server di sviluppo Vite inoltra `/api` (compreso lo stream WebSocket) e `/health` a `http://localhost:3000`, quindi l'URL dell'API nelle Impostazioni può restare vuoto (stessa origine).
 
-### Build di Produzione
+### Produzione
 
 ```bash
-# Type-check e build in dist/
-npm run build
-
-# Anteprima locale della build di produzione
-npm run preview
+npm run build      # type-check e build in dist/
 ```
 
-## 📁 Struttura del Progetto
+Il `Dockerfile` serve la build con nginx e inoltra `/api` e `/api/v2/stream` a `${UDC_BACKEND}` (predefinito `udc:3000`, impostato da Compose e dal chart Helm).
+
+## 📁 Struttura del progetto
 
 ```
-universal-data-connector-ui/
-├── index.html
-├── vite.config.ts            # Dev server + proxy verso il backend UDC
-└── src/
-    ├── api/
-    │   ├── client.ts         # Istanza Axios
-    │   ├── endpoints.ts      # Chiamate API tipizzate (status, sources, data, history, mapping, storage)
-    │   └── types.ts          # Tipi delle risposte API
-    ├── components/
-    │   ├── Layout/           # AppLayout, Sidebar, TopBar
-    │   ├── ConfirmDialog.tsx
-    │   └── StatusChip.tsx
-    ├── context/
-    │   └── AppContext.tsx    # Stato globale dell'app (tema, ...)
-    ├── hooks/
-    │   ├── useUDCStatus.ts   # Polling dello stato del backend
-    │   └── useWebSocket.ts   # Stream WebSocket con riconnessione automatica
-    ├── i18n/
-    │   ├── index.ts          # Setup i18next
-    │   └── locales/          # en.json, it.json
-    ├── pages/
-    │   ├── Dashboard/
-    │   ├── Connectors/       # Lista sorgenti + dialog di creazione/modifica
-    │   ├── Mapping/
-    │   ├── Storage/
-    │   ├── LiveData/         # Grafici in tempo reale, valori correnti, stream grezzo
-│   ├── History/          # Consultazione dello storico TimescaleDB
-    │   └── Settings/
-    ├── theme/                # Temi MUI chiaro/scuro
-    ├── App.tsx               # Route
-    └── main.tsx              # Entry point
+src/
+├── api/
+│   ├── client.ts         # Istanza Axios: base URL, token, X-Tenant, refresh su 401, URL dello stream
+│   ├── session.ts        # Token e tenant selezionato in localStorage
+│   ├── broker.ts         # API del broker: entità, subscription, storico, comandi, amministrazione, cluster
+│   ├── endpoints.ts      # API di sistema (/api/v2/system): stato, sorgenti, mapping, storage
+│   └── types.ts
+├── components/           # Layout (sidebar, barra in alto, menu utente), EntityHistory, EntityMap, dialog
+├── context/              # AppContext (tema, lingua, URL API), AuthContext (sessione, tenant, ruolo)
+├── hooks/                # useBrokerStream (WebSocket autenticato), useUDCStatus
+├── i18n/locales/         # it.json, en.json
+└── pages/                # Login, Dashboard, Entities, Subscriptions, History, LiveData,
+                          # Connectors, Mapping, Storage, Admin, Settings
 ```
 
-## 🔌 API del Backend Utilizzate
+## 🔌 API del backend
 
-La UI comunica con la REST API di UDC:
+- **API del broker** (`/api/v2`): vedi la [guida al broker](../universal-data-connector/docs/Broker.it.md).
+- **API di sistema** (`/api/v2/system`): vedi la [documentazione API](../universal-data-connector/docs/API.it.md).
+- **Dati live**: `ws(s)://<host>/api/v2/stream?access_token=…&tenant=…`. Alla chiusura con codice `4001` (token scaduto) la UI rinnova il token e si riconnette.
 
-| Area | Endpoint |
-|------|----------|
-| Status | `GET /api/status`, `GET /api/status/health` |
-| Sources | `GET /api/sources`, `POST /api/sources/:id/start|stop|restart` |
-| Sources CRUD | `POST/PUT/DELETE /api/config/sources[/:id]`, `POST /api/config/reload` |
-| Data | `GET /api/data/latest?limit=&source=` |
-| History | `GET /api/history/status`, `GET /api/history/sources`, `GET /api/history/measurements`, `GET /api/history/series`, `GET /api/history/records` |
-| Mapping | `GET /api/mapping/entities` |
-| Storage | `GET/PUT /api/config/storage`, `GET /api/config/storage/types`, `POST /api/config/storage/test`, `GET /api/config/storage/health`, `POST /api/config/storage/configure` |
-
-I dati live usano il WebSocket del backend (`ws://<host>:3001`, cioè l'URL API impostato in Settings con la porta `3000` sostituita da `3001`) con riconnessione automatica. Il WebSocket non passa dal proxy di Vite, quindi la porta `3001` deve essere raggiungibile dal browser. Formato dei messaggi: vedi la [documentazione API](../universal-data-connector/docs/API.it.md#websocket-real-time-stream).
-
-La pagina History richiede TimescaleDB configurato nel backend (come storage attivo oppure in `alternatives.timescaledb` in `config/storage.json`).
-
-## 🛠️ Stack Tecnologico
+## 🛠️ Stack tecnologico
 
 | Scopo | Libreria |
 |-------|----------|
 | Framework UI | React 18 + TypeScript |
-| Build tool | Vite 5 |
+| Build | Vite 5 |
 | Componenti | Material UI (MUI) v5 + Emotion |
 | Routing | React Router v6 |
 | Client HTTP | Axios |
 | Grafici | Recharts |
+| Mappe | Leaflet + react-leaflet |
 | i18n | i18next + react-i18next |
 
 ---
