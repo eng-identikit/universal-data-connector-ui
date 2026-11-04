@@ -23,6 +23,7 @@ import LinkIcon from '@mui/icons-material/Link'
 import InfoIcon from '@mui/icons-material/Info'
 import { useAppContext } from '../../context/AppContext'
 import { getWsUrl } from '../../api/client'
+import { getTileUrl } from '../../components/EntityMap'
 
 export default function Settings() {
   const { t } = useTranslation()
@@ -30,16 +31,29 @@ export default function Settings() {
     useAppContext()
 
   const [apiUrl, setApiUrl] = useState(apiBaseUrl)
+  const [tiles, setTiles] = useState(getTileUrl())
   const [snackOpen, setSnackOpen] = useState(false)
+
+  const saveTiles = (url: string) => {
+    try {
+      if (url.trim()) localStorage.setItem('udc-map-tiles', url.trim())
+      else localStorage.removeItem('udc-map-tiles')
+    } catch {
+      // storage unavailable: keep the default tiles
+    }
+  }
 
   const handleSave = () => {
     setApiBaseUrl(apiUrl.trim())
+    saveTiles(tiles)
     setSnackOpen(true)
   }
 
   const handleReset = () => {
     setApiUrl('')
     setApiBaseUrl('')
+    saveTiles('')
+    setTiles(getTileUrl())
   }
 
   return (
@@ -127,6 +141,15 @@ export default function Settings() {
                 {t('settings.wsUrlHelp')}:{' '}
                 <code>{getWsUrl(apiUrl.trim())}</code>
               </Typography>
+              <TextField
+                label={t('settings.mapTiles')}
+                value={tiles}
+                onChange={(e) => setTiles(e.target.value)}
+                fullWidth
+                size="small"
+                helperText={t('settings.mapTilesHelp')}
+                sx={{ mb: 2 }}
+              />
 
               <Box sx={{ display: 'flex', gap: 1 }}>
                 <Button variant="contained" onClick={handleSave}>

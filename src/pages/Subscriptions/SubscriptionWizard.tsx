@@ -28,10 +28,13 @@ import {
 import AddIcon from '@mui/icons-material/Add'
 import DeleteIcon from '@mui/icons-material/Delete'
 import VisibilityIcon from '@mui/icons-material/Visibility'
+import MapIcon from '@mui/icons-material/Map'
+import EntityMap, { type Bbox } from '../../components/EntityMap'
 import {
   createSubscription,
   updateSubscription,
   previewSubscription,
+  listEntities,
   getTypes,
   type Subscription,
   type SubscriptionInput,
@@ -193,6 +196,20 @@ export default function SubscriptionWizard({ open, subscription, onClose, onSave
   const [preview, setPreview] = useState<Entity[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [mapOpen, setMapOpen] = useState(false)
+  const [mapBbox, setMapBbox] = useState<Bbox | null>(null)
+  const [mapEntities, setMapEntities] = useState<Entity[]>([])
+
+  // Entities with a location in the visible area, to orient the area selection
+  useEffect(() => {
+    if (!mapOpen || !mapBbox) return
+    const timer = setTimeout(() => {
+      listEntities({ bbox: mapBbox.join(','), limit: 500, ...(form.types.length && { type: form.types.join(',') }) })
+        .then((r) => setMapEntities(r.entities))
+        .catch(() => setMapEntities([]))
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [mapOpen, mapBbox, form.types])
 
   useEffect(() => {
     if (!open) return
@@ -369,7 +386,10 @@ export default function SubscriptionWizard({ open, subscription, onClose, onSave
               <Typography variant="caption" color="text.secondary">
                 {t('subs.bbox')}
               </Typography>
-              <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
+              <Box sx={{ display: 'flex', gap: 1, mt: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
+                <Button size="small" startIcon={<MapIcon />} onClick={() => setMapOpen(true)}>
+                  {t('subs.pickOnMap')}
+                </Button>
                 {['minLon', 'minLat', 'maxLon', 'maxLat'].map((label, i) => (
                   <TextField
                     key={label}
@@ -652,6 +672,36 @@ export default function SubscriptionWizard({ open, subscription, onClose, onSave
           </Button>
         )}
       </DialogActions>
+
+      <Dialog open={mapOpen} onClose={() => setMapOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>{t('subs.pickOnMap')}</DialogTitle>
+        <DialogContent>
+          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+            {t('subs.pickOnMapHelp')}
+          </Typography>
+          <EntityMap entities={mapEntities} height={420} onBoundsChange={setMapBbox} fitToEntities={false} />
+          {mapBbox && (
+            <Typography variant="caption" fontFamily="monospace" display="block" sx={{ mt: 1 }}>
+              {mapBbox.map((v) => v.toFixed(5)).join(', ')}
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setMapOpen(false)} color="inherit">
+            {t('common.cancel')}
+          </Button>
+          <Button
+            variant="contained"
+            disabled={!mapBbox}
+            onClick={() => {
+              if (mapBbox) set('bbox', mapBbox.map((v) => v.toFixed(5)))
+              setMapOpen(false)
+            }}
+          >
+            {t('subs.useVisibleArea')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Dialog>
   )
 }

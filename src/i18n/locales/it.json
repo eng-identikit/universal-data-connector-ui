@@ -219,7 +219,9 @@
     "autoRefresh": "Intervallo Auto-Aggiornamento (ms)",
     "about": "Informazioni",
     "version": "Versione",
-    "appDescription": "Universal Data Connector UI fornisce un'interfaccia web per monitorare e configurare il backend UDC."
+    "appDescription": "Universal Data Connector UI fornisce un'interfaccia web per monitorare e configurare il backend UDC.",
+    "mapTiles": "Tile server mappa",
+    "mapTilesHelp": "Modello URL {z}/{x}/{y}. Vuoto = OpenStreetMap. Usa un server interno per installazioni senza Internet."
   },
   "history": {
     "title": "Storico",
@@ -322,7 +324,11 @@
     "latitude": "Latitudine (opzionale)",
     "longitude": "Longitudine (opzionale)",
     "errLocation": "Latitudine e longitudine devono essere numeri",
-    "attrsAfterCreate": "Gli attributi si aggiungono dalla pagina dell'entità dopo la creazione, oppure usa la scheda JSON."
+    "attrsAfterCreate": "Gli attributi si aggiungono dalla pagina dell'entità dopo la creazione, oppure usa la scheda JSON.",
+    "listView": "Lista",
+    "mapView": "Mappa",
+    "mapCount": "{{count}} entità con posizione nell'area visibile",
+    "mapTruncated": "Mostrate {{shown}} di {{total}} entità nell'area: avvicinati o filtra per vederle tutte"
   },
   "entity": {
     "back": "Indietro",
@@ -520,7 +526,10 @@
     "liveHelp": "Notifiche ricevute in tempo reale da questa pagina",
     "liveWaiting": "In attesa di notifiche…",
     "deleteTitle": "Elimina subscription",
-    "deleteMessage": "Eliminare la subscription {{name}}? Le notifiche in coda e la DLQ vengono scartate."
+    "deleteMessage": "Eliminare la subscription {{name}}? Le notifiche in coda e la DLQ vengono scartate.",
+    "pickOnMap": "Scegli sulla mappa",
+    "pickOnMapHelp": "Sposta e ingrandisci la mappa: l'area visibile diventa il riquadro della subscription.",
+    "useVisibleArea": "Usa l'area visibile"
   },
   "commands": {
     "title": "Comandi",
@@ -541,5 +550,12 @@
       "succeeded": "Eseguito",
       "failed": "Fallito"
     }
+  },
+  "location": {
+    "title": "Posizione",
+    "none": "Nessuna posizione",
+    "pick": "Imposta sulla mappa",
+    "pickHelp": "Clicca sulla mappa per impostare la posizione dell'entità.",
+    "remove": "Rimuovi posizione"
   }
 }

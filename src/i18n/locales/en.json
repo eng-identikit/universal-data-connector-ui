@@ -219,7 +219,9 @@
     "autoRefresh": "Auto Refresh Interval (ms)",
     "about": "About",
     "version": "Version",
-    "appDescription": "Universal Data Connector UI provides a web interface to monitor and configure the UDC backend."
+    "appDescription": "Universal Data Connector UI provides a web interface to monitor and configure the UDC backend.",
+    "mapTiles": "Map tile server",
+    "mapTilesHelp": "URL template {z}/{x}/{y}. Empty = OpenStreetMap. Use an internal server for offline installations."
   },
   "history": {
     "title": "History",
@@ -322,7 +324,11 @@
     "latitude": "Latitude (optional)",
     "longitude": "Longitude (optional)",
     "errLocation": "Latitude and longitude must be numbers",
-    "attrsAfterCreate": "Add attributes from the entity page after creating it, or use the JSON tab."
+    "attrsAfterCreate": "Add attributes from the entity page after creating it, or use the JSON tab.",
+    "listView": "List",
+    "mapView": "Map",
+    "mapCount": "{{count}} entities with a location in the visible area",
+    "mapTruncated": "Showing {{shown}} of {{total}} entities in the area: zoom in or filter to see them all"
   },
   "entity": {
     "back": "Back",
@@ -520,7 +526,10 @@
     "liveHelp": "Notifications received in real time by this page",
     "liveWaiting": "Waiting for notifications…",
     "deleteTitle": "Delete subscription",
-    "deleteMessage": "Delete subscription {{name}}? Queued notifications and the DLQ are discarded."
+    "deleteMessage": "Delete subscription {{name}}? Queued notifications and the DLQ are discarded.",
+    "pickOnMap": "Pick on map",
+    "pickOnMapHelp": "Pan and zoom: the visible area becomes the subscription bounding box.",
+    "useVisibleArea": "Use visible area"
   },
   "commands": {
     "title": "Commands",
@@ -541,5 +550,12 @@
       "succeeded": "Succeeded",
       "failed": "Failed"
     }
+  },
+  "location": {
+    "title": "Location",
+    "none": "No location",
+    "pick": "Set on map",
+    "pickHelp": "Click on the map to set the entity location.",
+    "remove": "Remove location"
   }
 }

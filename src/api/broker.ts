@@ -35,6 +35,8 @@ export interface Entity {
   updatedAt: string
   location?: GeoJsonGeometry
   attrs: Record<string, Attribute>
+  /** Present on `near` queries: distance from the reference point in meters */
+  distanceM?: number
 }
 
 /** Body for create/replace: attributes may omit type and ts. */
@@ -56,6 +58,14 @@ export interface EntityQuery {
   type?: string
   idPattern?: string
   related?: string
+  /** minLon,minLat,maxLon,maxLat */
+  bbox?: string
+  /** lon,lat — results ordered by distance, within maxDistance meters */
+  near?: string
+  maxDistance?: number
+  georel?: 'within' | 'intersects' | 'disjoint' | 'contains'
+  geometry?: string
+  located?: boolean
   depth?: number
   direction?: 'in' | 'out'
   attrs?: string
@@ -167,6 +177,9 @@ export const createEntity = (entity: EntityInput) =>
 
 export const replaceEntity = (id: string, entity: EntityInput, version?: number) =>
   apiClient.put<Entity>(`${V2}/entities/${enc(id)}`, entity, ifMatch(version)).then((r) => r.data)
+
+export const patchEntity = (id: string, body: Partial<EntityInput>, version?: number) =>
+  apiClient.patch<Entity>(`${V2}/entities/${enc(id)}`, body, ifMatch(version)).then((r) => r.data)
 
 export const deleteEntity = (id: string, version?: number) =>
   apiClient.delete(`${V2}/entities/${enc(id)}`, ifMatch(version))

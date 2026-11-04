@@ -26,10 +26,17 @@ import {
 import AddIcon from '@mui/icons-material/Add'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import ClearIcon from '@mui/icons-material/Clear'
+import ToggleButton from '@mui/material/ToggleButton'
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
+import ViewListIcon from '@mui/icons-material/ViewList'
+import MapIcon from '@mui/icons-material/Map'
 import { listEntities, getTypes, type Entity, type EntityQuery } from '../../api/broker'
 import { useCan } from '../../context/AuthContext'
+import EntityMap, { type Bbox } from '../../components/EntityMap'
 import CreateEntityDialog from './CreateEntityDialog'
 import { formatTime, formatValue } from './format'
+
+const MAP_LIMIT = 1000
 
 const ORDER_OPTIONS = ['id', '-id', 'type', '-updatedAt', 'updatedAt', '-createdAt']
 
@@ -65,6 +72,9 @@ export default function Entities() {
 
   const page = Number(params.get('page') || 0)
   const rowsPerPage = Number(params.get('size') || 25)
+  const view = params.get('view') === 'map' ? 'map' : 'list'
+  const [bbox, setBbox] = useState<Bbox | null>(null)
+  const [mapData, setMapData] = useState<{ entities: Entity[]; total: number } | null>(null)
   const filters = {
     type: params.get('type') || '',
     idPattern: params.get('idPattern') || '',
@@ -110,8 +120,33 @@ export default function Entities() {
   }, [params.toString()])
 
   useEffect(() => {
-    fetch()
-  }, [fetch])
+    if (view === 'list') fetch()
+  }, [fetch, view])
+
+  // Map view: entities with a location inside the visible area (debounced on pan/zoom)
+  useEffect(() => {
+    if (view !== 'map' || !bbox) return
+    const timer = setTimeout(async () => {
+      const query: EntityQuery = { bbox: bbox.join(','), limit: MAP_LIMIT, orderBy: 'id' }
+      if (filters.type) query.type = filters.type
+      if (filters.idPattern) query.idPattern = filters.idPattern
+      if (filters.related) {
+        query.related = filters.related
+        query.depth = Number(filters.depth)
+        query.direction = filters.direction as 'in' | 'out'
+      }
+      try {
+        setError(null)
+        const [list, typeList] = await Promise.all([listEntities(query), getTypes()])
+        setMapData(list)
+        setTypes(typeList)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err))
+      }
+    }, 300)
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, bbox, params.toString()])
 
   const applyText = () => update({ idPattern: draft.idPattern.trim(), related: draft.related.trim() })
 
@@ -131,7 +166,15 @@ export default function Entities() {
             {t('entities.subtitle')}
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', gap: 1 }}>
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+          <ToggleButtonGroup size="small" exclusive value={view} onChange={(_, v) => v && update({ view: v === 'map' ? 'map' : '' })}>
+            <ToggleButton value="list" aria-label={t('entities.listView')}>
+              <ViewListIcon fontSize="small" />
+            </ToggleButton>
+            <ToggleButton value="map" aria-label={t('entities.mapView')}>
+              <MapIcon fontSize="small" />
+            </ToggleButton>
+          </ToggleButtonGroup>
           <Tooltip title={t('common.refresh')}>
             <IconButton onClick={fetch} size="small">
               <RefreshIcon />
@@ -261,74 +304,91 @@ export default function Entities() {
         </Alert>
       )}
 
-      <Card>
-        <TableContainer>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>{t('common.type')}</TableCell>
-                <TableCell>{t('entities.attributes')}</TableCell>
-                <TableCell align="right">{t('entities.version')}</TableCell>
-                <TableCell>{t('entities.updated')}</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {!data &&
-                [0, 1, 2].map((i) => (
-                  <TableRow key={i}>
-                    <TableCell colSpan={5}>
-                      <Skeleton />
+      {view === 'map' && (
+        <Card>
+          <CardContent>
+            <EntityMap entities={mapData?.entities ?? []} height={560} onBoundsChange={setBbox} fitToEntities={false} />
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+              {mapData
+                ? mapData.total > MAP_LIMIT
+                  ? t('entities.mapTruncated', { shown: mapData.entities.length, total: mapData.total })
+                  : t('entities.mapCount', { count: mapData.total })
+                : t('common.loading')}
+            </Typography>
+          </CardContent>
+        </Card>
+      )}
+
+      {view === 'list' && (
+        <Card>
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>ID</TableCell>
+                  <TableCell>{t('common.type')}</TableCell>
+                  <TableCell>{t('entities.attributes')}</TableCell>
+                  <TableCell align="right">{t('entities.version')}</TableCell>
+                  <TableCell>{t('entities.updated')}</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {!data &&
+                  [0, 1, 2].map((i) => (
+                    <TableRow key={i}>
+                      <TableCell colSpan={5}>
+                        <Skeleton />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                {data?.entities.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} align="center" sx={{ py: 4, color: 'text.secondary' }}>
+                      {t('entities.empty')}
+                    </TableCell>
+                  </TableRow>
+                )}
+                {data?.entities.map((e) => (
+                  <TableRow
+                    key={e.id}
+                    hover
+                    onClick={() => navigate(`/entities/${encodeURIComponent(e.id)}`)}
+                    sx={{ cursor: 'pointer' }}
+                  >
+                    <TableCell>
+                      <Typography variant="body2" fontFamily="monospace" fontWeight={500}>
+                        {e.id}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip label={e.type} size="small" color="primary" variant="outlined" />
+                    </TableCell>
+                    <TableCell>
+                      <AttrPreview entity={e} />
+                    </TableCell>
+                    <TableCell align="right">{e.version}</TableCell>
+                    <TableCell>
+                      <Typography variant="caption" color="text.secondary">
+                        {formatTime(e.updatedAt)}
+                      </Typography>
                     </TableCell>
                   </TableRow>
                 ))}
-              {data?.entities.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 4, color: 'text.secondary' }}>
-                    {t('entities.empty')}
-                  </TableCell>
-                </TableRow>
-              )}
-              {data?.entities.map((e) => (
-                <TableRow
-                  key={e.id}
-                  hover
-                  onClick={() => navigate(`/entities/${encodeURIComponent(e.id)}`)}
-                  sx={{ cursor: 'pointer' }}
-                >
-                  <TableCell>
-                    <Typography variant="body2" fontFamily="monospace" fontWeight={500}>
-                      {e.id}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip label={e.type} size="small" color="primary" variant="outlined" />
-                  </TableCell>
-                  <TableCell>
-                    <AttrPreview entity={e} />
-                  </TableCell>
-                  <TableCell align="right">{e.version}</TableCell>
-                  <TableCell>
-                    <Typography variant="caption" color="text.secondary">
-                      {formatTime(e.updatedAt)}
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-        <TablePagination
-          component="div"
-          count={data?.total ?? 0}
-          page={page}
-          rowsPerPage={rowsPerPage}
-          rowsPerPageOptions={[10, 25, 50, 100]}
-          onPageChange={(_, p) => update({ page: p }, false)}
-          onRowsPerPageChange={(e) => update({ size: e.target.value })}
-          labelRowsPerPage={t('entities.rowsPerPage')}
-        />
-      </Card>
+              </TableBody>
+            </Table>
+          </TableContainer>
+          <TablePagination
+            component="div"
+            count={data?.total ?? 0}
+            page={page}
+            rowsPerPage={rowsPerPage}
+            rowsPerPageOptions={[10, 25, 50, 100]}
+            onPageChange={(_, p) => update({ page: p }, false)}
+            onRowsPerPageChange={(e) => update({ size: e.target.value })}
+            labelRowsPerPage={t('entities.rowsPerPage')}
+          />
+        </Card>
+      )}
 
       <CreateEntityDialog
         open={createOpen}

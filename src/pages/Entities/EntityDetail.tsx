@@ -40,6 +40,7 @@ import {
   putAttribute,
   deleteAttribute,
   replaceEntity,
+  patchEntity,
   type Entity,
   type EntityGraph,
   type Attribute,
@@ -50,6 +51,7 @@ import ConfirmDialog from '../../components/ConfirmDialog'
 import AttributeDialog from './AttributeDialog'
 import { CommandDialog, CommandsList } from './CommandsPanel'
 import EntityHistory from '../../components/EntityHistory'
+import LocationPanel from './LocationPanel'
 import SettingsRemoteIcon from '@mui/icons-material/SettingsRemote'
 import { formatTime, formatValue, qualityColor } from './format'
 
@@ -111,7 +113,7 @@ export default function EntityDetail() {
   const [entity, setEntity] = useState<Entity | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [conflict, setConflict] = useState(false)
-  const [tab, setTab] = useState<'attrs' | 'history' | 'relations' | 'commands' | 'json'>('attrs')
+  const [tab, setTab] = useState<'attrs' | 'history' | 'relations' | 'location' | 'commands' | 'json'>('attrs')
   const [commandAttr, setCommandAttr] = useState<string | null>(null)
   const [commandsKey, setCommandsKey] = useState(0)
   const [depth, setDepth] = useState(2)
@@ -244,6 +246,7 @@ export default function EntityDetail() {
           <Tab value="attrs" label={`${t('entities.attributes')} (${attrs.length})`} />
           <Tab value="history" label={t('nav.history')} />
           <Tab value="relations" label={t('entity.relations')} />
+          <Tab value="location" label={t('location.title')} />
           <Tab value="commands" label={t('commands.title')} />
           <Tab value="json" label="JSON" />
         </Tabs>
@@ -350,6 +353,16 @@ export default function EntityDetail() {
             <EntityHistory
               entityId={entity.id}
               units={Object.fromEntries(Object.entries(entity.attrs).map(([k, a]) => [k, a.unit]))}
+            />
+          </CardContent>
+        )}
+
+        {tab === 'location' && (
+          <CardContent>
+            <LocationPanel
+              entity={entity}
+              canWrite={canWrite}
+              onSave={(location) => write(() => patchEntity(entity.id, { location }, entity.version))}
             />
           </CardContent>
         )}
