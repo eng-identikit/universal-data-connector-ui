@@ -20,12 +20,14 @@ import TimelineIcon from '@mui/icons-material/Timeline'
 import SettingsIcon from '@mui/icons-material/Settings'
 import HubIcon from '@mui/icons-material/Hub'
 import CategoryIcon from '@mui/icons-material/Category'
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive'
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings'
 import { useAuth, useCan } from '../../context/AuthContext'
 
 const navItems = [
   { path: '/', labelKey: 'nav.dashboard', icon: <DashboardIcon /> },
   { path: '/entities', labelKey: 'nav.entities', icon: <CategoryIcon /> },
+  { path: '/subscriptions', labelKey: 'nav.subscriptions', icon: <NotificationsActiveIcon /> },
   { path: '/connectors', labelKey: 'nav.connectors', icon: <DeviceHubIcon /> },
   { path: '/mapping', labelKey: 'nav.mapping', icon: <AccountTreeIcon /> },
   { path: '/storage', labelKey: 'nav.storage', icon: <StorageIcon /> },

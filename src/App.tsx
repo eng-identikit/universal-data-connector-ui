@@ -10,6 +10,8 @@ import Dashboard from './pages/Dashboard'
 import Entities from './pages/Entities'
 import EntityDetail from './pages/Entities/EntityDetail'
 import Admin from './pages/Admin'
+import Subscriptions from './pages/Subscriptions'
+import SubscriptionDetail from './pages/Subscriptions/SubscriptionDetail'
 import Connectors from './pages/Connectors'
 import Mapping from './pages/Mapping'
 import Storage from './pages/Storage'
@@ -36,6 +38,8 @@ function AuthenticatedApp() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/entities" element={<Entities />} />
         <Route path="/entities/:id" element={<EntityDetail />} />
+        <Route path="/subscriptions" element={<Subscriptions />} />
+        <Route path="/subscriptions/:id" element={<SubscriptionDetail />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/connectors" element={<Connectors />} />
         <Route path="/mapping" element={<Mapping />} />

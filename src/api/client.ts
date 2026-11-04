@@ -59,6 +59,26 @@ async function refreshTokens(): Promise<Tokens | null> {
   }
 }
 
+/** Refreshes the token pair (shared with the 401 interceptor); null if the session ended. */
+export function refreshSession() {
+  refreshing = refreshing || refreshTokens().finally(() => (refreshing = null))
+  return refreshing
+}
+
+/** URL of the authenticated broker stream for the current session and tenant. */
+export function getStreamUrl() {
+  const base = getBaseUrl()
+  const origin = base
+    ? base.replace(/^http/, 'ws')
+    : `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}`
+  const params = new URLSearchParams()
+  const tokens = session.getTokens()
+  if (tokens) params.set('access_token', tokens.accessToken)
+  const tenant = session.getTenant()
+  if (tenant) params.set('tenant', tenant)
+  return `${origin}/api/v2/stream?${params}`
+}
+
 apiClient.interceptors.response.use(
   (res) => res,
   async (err) => {
@@ -66,8 +86,7 @@ apiClient.interceptors.response.use(
     const isAuthCall = original?.url?.includes('/api/v2/auth/')
     if (err.response?.status === 401 && original && !original._retried && !isAuthCall && session.getTokens()) {
       original._retried = true
-      refreshing = refreshing || refreshTokens().finally(() => (refreshing = null))
-      const tokens = await refreshing
+      const tokens = await refreshSession()
       if (tokens) {
         original.headers = { ...original.headers, Authorization: `Bearer ${tokens.accessToken}` }
         return apiClient(original)

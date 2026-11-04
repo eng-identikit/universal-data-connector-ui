@@ -229,3 +229,141 @@ export const createApiKey = (key: { name: string; role: Role; allowedTypes?: str
   apiClient.post<ApiKey & { key: string }>(`${V2}/apikeys`, key).then((r) => r.data)
 
 export const revokeApiKey = (id: string) => apiClient.delete(`${V2}/apikeys/${enc(id)}`)
+
+// ─── Subscriptions ───────────────────────────────────────────────────────────
+
+export type Channel = 'http' | 'mqtt' | 'nats' | 'websocket'
+export type TriggerOp = 'create' | 'update' | 'delete'
+
+export interface SubscriptionSelect {
+  types?: string[]
+  idPattern?: string | null
+  ids?: string[]
+  related?: { id: string; depth: number; direction: 'in' | 'out' } | null
+  bbox?: [number, number, number, number] | null
+}
+
+export interface SubscriptionNotify {
+  channel: Channel
+  url?: string | null
+  method?: 'POST' | 'PUT' | 'PATCH'
+  headers?: Record<string, string>
+  timeoutMs?: number
+  topic?: string
+  qos?: 0 | 1 | 2
+  retain?: boolean
+  username?: string | null
+  password?: string | null
+  subject?: string
+  attrs?: string[]
+  format?: 'full' | 'values'
+  perEntity?: boolean
+}
+
+export interface SubscriptionStats {
+  matched: number
+  delivered: number
+  failedAttempts: number
+  dead: number
+  dlq: number
+  lastNotificationAt: string | null
+  lastSuccessAt: string | null
+  lastFailureAt: string | null
+  lastError: string | null
+  lastLatencyMs: number | null
+}
+
+export interface SubscriptionInput {
+  name: string
+  description?: string | null
+  enabled?: boolean
+  select?: SubscriptionSelect
+  trigger?: { on?: TriggerOp[]; attrs?: string[]; deadband?: Record<string, number> }
+  filter?: string | null
+  filterMode?: 'level' | 'edge'
+  throttleMs?: number | null
+  periodicMs?: number | null
+  notify: SubscriptionNotify
+  delivery?: { maxRetries?: number; backoffMs?: number }
+  expiresAt?: string | null
+}
+
+export interface Subscription extends Required<Omit<SubscriptionInput, 'description' | 'filter' | 'throttleMs' | 'periodicMs' | 'expiresAt'>> {
+  id: string
+  tenant: string
+  description: string | null
+  filter: string | null
+  throttleMs: number | null
+  periodicMs: number | null
+  expiresAt: string | null
+  createdBy: string | null
+  createdAt: string
+  updatedAt: string
+  trigger: { on: TriggerOp[]; attrs: string[]; deadband: Record<string, number> }
+  select: SubscriptionSelect
+  delivery: { maxRetries: number; backoffMs: number }
+  stats?: SubscriptionStats
+}
+
+export interface Notification {
+  id: string
+  subscriptionId: string
+  subscriptionName: string
+  tenant: string
+  reason: 'create' | 'update' | 'delete' | 'periodic' | 'test'
+  timestamp: string
+  entities: Record<string, unknown>[]
+  replayOf?: string
+}
+
+export interface DlqItem {
+  id: string
+  notification: Notification
+  error: string | null
+  attempts: number
+  failedAt: string
+}
+
+export const listSubscriptions = () =>
+  apiClient.get<{ subscriptions: Subscription[] }>(`${V2}/subscriptions`).then((r) => r.data.subscriptions)
+
+export const getSubscription = (id: string) =>
+  apiClient.get<Subscription>(`${V2}/subscriptions/${enc(id)}`).then((r) => r.data)
+
+export const createSubscription = (sub: SubscriptionInput) =>
+  apiClient.post<Subscription>(`${V2}/subscriptions`, sub).then((r) => r.data)
+
+export const updateSubscription = (id: string, changes: Partial<SubscriptionInput>) =>
+  apiClient.patch<Subscription>(`${V2}/subscriptions/${enc(id)}`, changes).then((r) => r.data)
+
+export const deleteSubscription = (id: string) => apiClient.delete(`${V2}/subscriptions/${enc(id)}`)
+
+export const pauseSubscription = (id: string) =>
+  apiClient.post<Subscription>(`${V2}/subscriptions/${enc(id)}/pause`).then((r) => r.data)
+
+export const resumeSubscription = (id: string) =>
+  apiClient.post<Subscription>(`${V2}/subscriptions/${enc(id)}/resume`).then((r) => r.data)
+
+export const resetSubscriptionStats = (id: string) => apiClient.delete(`${V2}/subscriptions/${enc(id)}/stats`)
+
+export const testSubscription = (id: string, entityId?: string) =>
+  apiClient
+    .post<{ ok: boolean; latencyMs: number; error?: string; entityId: string }>(`${V2}/subscriptions/${enc(id)}/test`, { entityId }, { timeout: 70000 })
+    .then((r) => r.data)
+
+export const previewSubscription = (draft: Partial<SubscriptionInput>) =>
+  apiClient.post<{ entities: Entity[]; count: number }>(`${V2}/subscriptions/preview`, draft).then((r) => r.data)
+
+export const validateExpression = (expression: string) =>
+  apiClient
+    .post<{ valid: boolean; attrs?: string[]; error?: string; position?: number | null }>(`${V2}/expressions/validate`, { expression })
+    .then((r) => r.data)
+
+export const listDlq = (id: string) =>
+  apiClient.get<{ items: DlqItem[] }>(`${V2}/subscriptions/${enc(id)}/dlq`).then((r) => r.data.items)
+
+export const replayDlq = (id: string, ids?: string[]) =>
+  apiClient.post<{ replayed: number }>(`${V2}/subscriptions/${enc(id)}/dlq/replay`, { ids }).then((r) => r.data)
+
+export const purgeDlq = (id: string, ids?: string[]) =>
+  apiClient.delete<{ purged: number }>(`${V2}/subscriptions/${enc(id)}/dlq`, { data: { ids } }).then((r) => r.data)
