@@ -503,6 +503,8 @@
     "brokerUrl": "URL broker (opzionale)",
     "brokerUrlHelp": "Vuoto = broker MQTT configurato nel server",
     "natsUrlHelp": "Vuoto = NATS del broker",
+    "mqttNoDefault": "Nessun broker MQTT configurato nel server: indicane uno",
+    "natsNoDefault": "Nessun NATS configurato nel server: indicane uno",
     "websocketHelp": "Le notifiche arrivano ai client collegati a /api/v2/stream che si iscrivono a questa subscription (vedi la scheda Live). I client non collegati non le ricevono.",
     "projection": "Attributi nella notifica",
     "projectionHelp": "Vuoto = tutti",

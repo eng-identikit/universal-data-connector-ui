@@ -36,6 +36,8 @@ import {
   previewSubscription,
   listEntities,
   getTypes,
+  getBrokerHealth,
+  type BrokerHealth,
   type Subscription,
   type SubscriptionInput,
   type Channel,
@@ -199,6 +201,8 @@ export default function SubscriptionWizard({ open, subscription, onClose, onSave
   const [mapOpen, setMapOpen] = useState(false)
   const [mapBbox, setMapBbox] = useState<Bbox | null>(null)
   const [mapEntities, setMapEntities] = useState<Entity[]>([])
+  // MQTT and NATS are optional on the server: without a default broker the URL is mandatory
+  const [defaultBrokers, setDefaultBrokers] = useState<BrokerHealth['defaultBrokers']>({ mqtt: true, nats: true })
 
   // Entities with a location in the visible area, to orient the area selection
   useEffect(() => {
@@ -220,6 +224,9 @@ export default function SubscriptionWizard({ open, subscription, onClose, onSave
     getTypes()
       .then((ts) => setTypes(ts.map((x) => x.type)))
       .catch(() => setTypes([]))
+    getBrokerHealth()
+      .then((h) => h.defaultBrokers && setDefaultBrokers(h.defaultBrokers))
+      .catch(() => {})
   }, [open, subscription])
 
   const set = <K extends keyof Form>(key: K, value: Form[K]) => setForm((f) => ({ ...f, [key]: value }))
@@ -240,11 +247,14 @@ export default function SubscriptionWizard({ open, subscription, onClose, onSave
     }
   }
 
+  const urlRequired = (form.channel === 'mqtt' || form.channel === 'nats') && !defaultBrokers[form.channel]
+  const urlMissing = urlRequired && !form.url.trim()
+
   const stepValid = [
     form.name.trim() !== '',
     form.on.length > 0,
     true,
-    form.channel === 'http' ? /^https?:\/\//.test(form.url.trim()) : form.channel === 'mqtt' ? !!form.topic.trim() : form.channel === 'nats' ? !!form.subject.trim() : true,
+    form.channel === 'http' ? /^https?:\/\//.test(form.url.trim()) : form.channel === 'mqtt' ? !!form.topic.trim() && !urlMissing : form.channel === 'nats' ? !!form.subject.trim() && !urlMissing : true,
   ]
 
   const save = async () => {
@@ -564,7 +574,7 @@ export default function SubscriptionWizard({ open, subscription, onClose, onSave
             {form.channel === 'mqtt' && (
               <>
                 <Grid item xs={12} sm={6}>
-                  <TextField label={t('subs.brokerUrl')} value={form.url} onChange={(e) => set('url', e.target.value)} fullWidth size="small" placeholder="mqtt://host:1883" helperText={t('subs.brokerUrlHelp')} />
+                  <TextField label={t('subs.brokerUrl')} value={form.url} onChange={(e) => set('url', e.target.value)} fullWidth size="small" placeholder="mqtt://host:1883" required={urlRequired} error={urlMissing} helperText={t(urlRequired ? 'subs.mqttNoDefault' : 'subs.brokerUrlHelp')} />
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <TextField label="Topic" value={form.topic} onChange={(e) => set('topic', e.target.value)} fullWidth size="small" helperText="{tenant} {subscription} {entityType} {entityId}" />
@@ -593,7 +603,7 @@ export default function SubscriptionWizard({ open, subscription, onClose, onSave
             {form.channel === 'nats' && (
               <>
                 <Grid item xs={12} sm={6}>
-                  <TextField label={t('subs.brokerUrl')} value={form.url} onChange={(e) => set('url', e.target.value)} fullWidth size="small" placeholder="nats://host:4222" helperText={t('subs.natsUrlHelp')} />
+                  <TextField label={t('subs.brokerUrl')} value={form.url} onChange={(e) => set('url', e.target.value)} fullWidth size="small" placeholder="nats://host:4222" required={urlRequired} error={urlMissing} helperText={t(urlRequired ? 'subs.natsNoDefault' : 'subs.natsUrlHelp')} />
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <TextField label="Subject" value={form.subject} onChange={(e) => set('subject', e.target.value)} fullWidth size="small" helperText="{tenant} {subscription} {entityType} {entityId}" />

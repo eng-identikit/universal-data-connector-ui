@@ -474,3 +474,19 @@ export interface ClusterStatus {
 }
 
 export const getCluster = () => apiClient.get<ClusterStatus>(`${V2}/cluster`).then((r) => r.data)
+
+// ─── Health ──────────────────────────────────────────────────────────────────
+
+export interface BrokerHealth {
+  ready: boolean
+  instance: string
+  database: boolean
+  geo: boolean
+  cluster: boolean
+  messaging: 'nats' | 'nats-disconnected' | 'memory'
+  /** Notification channels usable without an explicit notify.url */
+  defaultBrokers: { mqtt: boolean; nats: boolean }
+  error: string | null
+}
+
+export const getBrokerHealth = () => apiClient.get<BrokerHealth>(`${V2}/health`).then((r) => r.data)
