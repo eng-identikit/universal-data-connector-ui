@@ -505,7 +505,7 @@
     "natsUrlHelp": "Empty = the broker's NATS",
     "mqttNoDefault": "No MQTT broker configured on the server: enter one",
     "natsNoDefault": "No NATS configured on the server: enter one",
-    "websocketHelp": "Notifications reach clients connected to /api/v2/stream that subscribe to this subscription (see the Live tab). Clients that are not connected miss them.",
+    "websocketHelp": "Notifications reach clients connected to /api/v1/stream that subscribe to this subscription (see the Live tab). Clients that are not connected miss them.",
     "projection": "Attributes in the notification",
     "projectionHelp": "Empty = all",
     "format": "Format",

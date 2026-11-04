@@ -13,7 +13,7 @@ export type StreamMessage =
 const RECONNECT_MS = 3000
 
 /**
- * Authenticated connection to /api/v2/stream. Re-sends the subscriptions on
+ * Authenticated connection to /api/v1/stream. Re-sends the subscriptions on
  * every (re)connect and refreshes the token when the server closes with 4001.
  * `onMessage` is read through a ref, so it does not need to be memoized.
  */

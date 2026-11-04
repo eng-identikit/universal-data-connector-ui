@@ -53,7 +53,7 @@ Il server di sviluppo Vite inoltra `/api` (compreso lo stream WebSocket) e `/hea
 npm run build      # type-check e build in dist/
 ```
 
-Il `Dockerfile` serve la build con nginx e inoltra `/api` e `/api/v2/stream` a `${UDC_BACKEND}` (predefinito `udc:3000`, impostato da Compose e dal chart Helm).
+Il `Dockerfile` serve la build con nginx e inoltra `/api` e `/api/v1/stream` a `${UDC_BACKEND}` (predefinito `udc:3000`, impostato da Compose e dal chart Helm).
 
 ## 📁 Struttura del progetto
 
@@ -63,7 +63,7 @@ src/
 │   ├── client.ts         # Istanza Axios: base URL, token, X-Tenant, refresh su 401, URL dello stream
 │   ├── session.ts        # Token e tenant selezionato in localStorage
 │   ├── broker.ts         # API del broker: entità, subscription, storico, comandi, amministrazione, cluster
-│   ├── endpoints.ts      # API di sistema (/api/v2/system): stato, sorgenti, mapping, storage
+│   ├── endpoints.ts      # API di sistema (/api/v1/system): stato, sorgenti, mapping, storage
 │   └── types.ts
 ├── components/           # Layout (sidebar, barra in alto, menu utente), EntityHistory, EntityMap, dialog
 ├── context/              # AppContext (tema, lingua, URL API), AuthContext (sessione, tenant, ruolo)
@@ -75,9 +75,9 @@ src/
 
 ## 🔌 API del backend
 
-- **API del broker** (`/api/v2`): vedi la [guida al broker](../universal-data-connector/docs/Broker.it.md).
-- **API di sistema** (`/api/v2/system`): vedi la [documentazione API](../universal-data-connector/docs/API.it.md).
-- **Dati live**: `ws(s)://<host>/api/v2/stream?access_token=…&tenant=…`. Alla chiusura con codice `4001` (token scaduto) la UI rinnova il token e si riconnette.
+- **API del broker** (`/api/v1`): vedi la [guida al broker](../universal-data-connector/docs/Broker.it.md).
+- **API di sistema** (`/api/v1/system`): vedi la [documentazione API](../universal-data-connector/docs/API.it.md).
+- **Dati live**: `ws(s)://<host>/api/v1/stream?access_token=…&tenant=…`. Alla chiusura con codice `4001` (token scaduto) la UI rinnova il token e si riconnette.
 
 ## 🛠️ Stack tecnologico
 

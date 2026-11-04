@@ -144,80 +144,80 @@ export interface ApiKey {
   lastUsedAt: string | null
 }
 
-const V2 = '/api/v2'
+const V1 = '/api/v1'
 const enc = encodeURIComponent
 const ifMatch = (version?: number) => (version ? { headers: { 'If-Match': String(version) } } : undefined)
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
 export const login = (username: string, password: string) =>
-  apiClient.post<Session>(`${V2}/auth/login`, { username, password }).then((r) => r.data)
+  apiClient.post<Session>(`${V1}/auth/login`, { username, password }).then((r) => r.data)
 
-export const getMe = () => apiClient.get<Me>(`${V2}/auth/me`).then((r) => r.data)
+export const getMe = () => apiClient.get<Me>(`${V1}/auth/me`).then((r) => r.data)
 
 export const changePassword = (currentPassword: string, newPassword: string) =>
-  apiClient.post<Session>(`${V2}/auth/password`, { currentPassword, newPassword }).then((r) => r.data)
+  apiClient.post<Session>(`${V1}/auth/password`, { currentPassword, newPassword }).then((r) => r.data)
 
 // ─── Entities ────────────────────────────────────────────────────────────────
 
 export const listEntities = (query: EntityQuery) =>
-  apiClient.get<EntityList>(`${V2}/entities`, { params: query }).then((r) => r.data)
+  apiClient.get<EntityList>(`${V1}/entities`, { params: query }).then((r) => r.data)
 
 export const getEntity = (id: string) =>
-  apiClient.get<Entity>(`${V2}/entities/${enc(id)}`).then((r) => r.data)
+  apiClient.get<Entity>(`${V1}/entities/${enc(id)}`).then((r) => r.data)
 
 export const getEntityGraph = (id: string, depth = 1, direction: 'in' | 'out' | 'both' = 'both') =>
-  apiClient.get<EntityGraph>(`${V2}/entities/${enc(id)}/graph`, { params: { depth, direction } }).then((r) => r.data)
+  apiClient.get<EntityGraph>(`${V1}/entities/${enc(id)}/graph`, { params: { depth, direction } }).then((r) => r.data)
 
 export const getTypes = () =>
-  apiClient.get<{ types: { type: string; count: number }[] }>(`${V2}/types`).then((r) => r.data.types)
+  apiClient.get<{ types: { type: string; count: number }[] }>(`${V1}/types`).then((r) => r.data.types)
 
 export const createEntity = (entity: EntityInput) =>
-  apiClient.post<Entity>(`${V2}/entities`, entity).then((r) => r.data)
+  apiClient.post<Entity>(`${V1}/entities`, entity).then((r) => r.data)
 
 export const replaceEntity = (id: string, entity: EntityInput, version?: number) =>
-  apiClient.put<Entity>(`${V2}/entities/${enc(id)}`, entity, ifMatch(version)).then((r) => r.data)
+  apiClient.put<Entity>(`${V1}/entities/${enc(id)}`, entity, ifMatch(version)).then((r) => r.data)
 
 export const patchEntity = (id: string, body: Partial<EntityInput>, version?: number) =>
-  apiClient.patch<Entity>(`${V2}/entities/${enc(id)}`, body, ifMatch(version)).then((r) => r.data)
+  apiClient.patch<Entity>(`${V1}/entities/${enc(id)}`, body, ifMatch(version)).then((r) => r.data)
 
 export const deleteEntity = (id: string, version?: number) =>
-  apiClient.delete(`${V2}/entities/${enc(id)}`, ifMatch(version))
+  apiClient.delete(`${V1}/entities/${enc(id)}`, ifMatch(version))
 
 export const putAttribute = (id: string, name: string, attr: Partial<Attribute>, version?: number) =>
-  apiClient.put<Entity>(`${V2}/entities/${enc(id)}/attrs/${enc(name)}`, attr, ifMatch(version)).then((r) => r.data)
+  apiClient.put<Entity>(`${V1}/entities/${enc(id)}/attrs/${enc(name)}`, attr, ifMatch(version)).then((r) => r.data)
 
 export const deleteAttribute = (id: string, name: string, version?: number) =>
-  apiClient.delete<Entity>(`${V2}/entities/${enc(id)}/attrs/${enc(name)}`, ifMatch(version)).then((r) => r.data)
+  apiClient.delete<Entity>(`${V1}/entities/${enc(id)}/attrs/${enc(name)}`, ifMatch(version)).then((r) => r.data)
 
 // ─── Tenants & members ───────────────────────────────────────────────────────
 
 export const listTenants = () =>
-  apiClient.get<{ tenants: Tenant[] }>(`${V2}/tenants`).then((r) => r.data.tenants)
+  apiClient.get<{ tenants: Tenant[] }>(`${V1}/tenants`).then((r) => r.data.tenants)
 
 export const createTenant = (tenant: { id: string; name?: string; description?: string }) =>
-  apiClient.post<Tenant>(`${V2}/tenants`, tenant).then((r) => r.data)
+  apiClient.post<Tenant>(`${V1}/tenants`, tenant).then((r) => r.data)
 
 export const updateTenant = (id: string, changes: { name?: string; description?: string }) =>
-  apiClient.patch<Tenant>(`${V2}/tenants/${enc(id)}`, changes).then((r) => r.data)
+  apiClient.patch<Tenant>(`${V1}/tenants/${enc(id)}`, changes).then((r) => r.data)
 
-export const deleteTenant = (id: string) => apiClient.delete(`${V2}/tenants/${enc(id)}`)
+export const deleteTenant = (id: string) => apiClient.delete(`${V1}/tenants/${enc(id)}`)
 
 export const listMembers = (tenant: string) =>
-  apiClient.get<{ members: Member[] }>(`${V2}/tenants/${enc(tenant)}/members`).then((r) => r.data.members)
+  apiClient.get<{ members: Member[] }>(`${V1}/tenants/${enc(tenant)}/members`).then((r) => r.data.members)
 
 export const addMember = (tenant: string, username: string, role: Role) =>
-  apiClient.post(`${V2}/tenants/${enc(tenant)}/members`, { username, role })
+  apiClient.post(`${V1}/tenants/${enc(tenant)}/members`, { username, role })
 
 export const setMemberRole = (tenant: string, userId: string, role: Role) =>
-  apiClient.put(`${V2}/tenants/${enc(tenant)}/members/${enc(userId)}`, { role })
+  apiClient.put(`${V1}/tenants/${enc(tenant)}/members/${enc(userId)}`, { role })
 
 export const removeMember = (tenant: string, userId: string) =>
-  apiClient.delete(`${V2}/tenants/${enc(tenant)}/members/${enc(userId)}`)
+  apiClient.delete(`${V1}/tenants/${enc(tenant)}/members/${enc(userId)}`)
 
 // ─── Users (superadmin) ──────────────────────────────────────────────────────
 
-export const listUsers = () => apiClient.get<{ users: User[] }>(`${V2}/users`).then((r) => r.data.users)
+export const listUsers = () => apiClient.get<{ users: User[] }>(`${V1}/users`).then((r) => r.data.users)
 
 export const createUser = (user: {
   username: string
@@ -225,23 +225,23 @@ export const createUser = (user: {
   displayName?: string
   isSuperadmin?: boolean
   tenants?: { tenant: string; role: Role }[]
-}) => apiClient.post<User>(`${V2}/users`, user).then((r) => r.data)
+}) => apiClient.post<User>(`${V1}/users`, user).then((r) => r.data)
 
 export const updateUser = (
   id: string,
   changes: { displayName?: string; password?: string; isSuperadmin?: boolean; disabled?: boolean },
-) => apiClient.patch<User>(`${V2}/users/${enc(id)}`, changes).then((r) => r.data)
+) => apiClient.patch<User>(`${V1}/users/${enc(id)}`, changes).then((r) => r.data)
 
-export const deleteUser = (id: string) => apiClient.delete(`${V2}/users/${enc(id)}`)
+export const deleteUser = (id: string) => apiClient.delete(`${V1}/users/${enc(id)}`)
 
 // ─── API keys (tenant admin) ─────────────────────────────────────────────────
 
-export const listApiKeys = () => apiClient.get<{ apiKeys: ApiKey[] }>(`${V2}/apikeys`).then((r) => r.data.apiKeys)
+export const listApiKeys = () => apiClient.get<{ apiKeys: ApiKey[] }>(`${V1}/apikeys`).then((r) => r.data.apiKeys)
 
 export const createApiKey = (key: { name: string; role: Role; allowedTypes?: string[]; expiresAt?: string }) =>
-  apiClient.post<ApiKey & { key: string }>(`${V2}/apikeys`, key).then((r) => r.data)
+  apiClient.post<ApiKey & { key: string }>(`${V1}/apikeys`, key).then((r) => r.data)
 
-export const revokeApiKey = (id: string) => apiClient.delete(`${V2}/apikeys/${enc(id)}`)
+export const revokeApiKey = (id: string) => apiClient.delete(`${V1}/apikeys/${enc(id)}`)
 
 // ─── Subscriptions ───────────────────────────────────────────────────────────
 
@@ -338,48 +338,48 @@ export interface DlqItem {
 }
 
 export const listSubscriptions = () =>
-  apiClient.get<{ subscriptions: Subscription[] }>(`${V2}/subscriptions`).then((r) => r.data.subscriptions)
+  apiClient.get<{ subscriptions: Subscription[] }>(`${V1}/subscriptions`).then((r) => r.data.subscriptions)
 
 export const getSubscription = (id: string) =>
-  apiClient.get<Subscription>(`${V2}/subscriptions/${enc(id)}`).then((r) => r.data)
+  apiClient.get<Subscription>(`${V1}/subscriptions/${enc(id)}`).then((r) => r.data)
 
 export const createSubscription = (sub: SubscriptionInput) =>
-  apiClient.post<Subscription>(`${V2}/subscriptions`, sub).then((r) => r.data)
+  apiClient.post<Subscription>(`${V1}/subscriptions`, sub).then((r) => r.data)
 
 export const updateSubscription = (id: string, changes: Partial<SubscriptionInput>) =>
-  apiClient.patch<Subscription>(`${V2}/subscriptions/${enc(id)}`, changes).then((r) => r.data)
+  apiClient.patch<Subscription>(`${V1}/subscriptions/${enc(id)}`, changes).then((r) => r.data)
 
-export const deleteSubscription = (id: string) => apiClient.delete(`${V2}/subscriptions/${enc(id)}`)
+export const deleteSubscription = (id: string) => apiClient.delete(`${V1}/subscriptions/${enc(id)}`)
 
 export const pauseSubscription = (id: string) =>
-  apiClient.post<Subscription>(`${V2}/subscriptions/${enc(id)}/pause`).then((r) => r.data)
+  apiClient.post<Subscription>(`${V1}/subscriptions/${enc(id)}/pause`).then((r) => r.data)
 
 export const resumeSubscription = (id: string) =>
-  apiClient.post<Subscription>(`${V2}/subscriptions/${enc(id)}/resume`).then((r) => r.data)
+  apiClient.post<Subscription>(`${V1}/subscriptions/${enc(id)}/resume`).then((r) => r.data)
 
-export const resetSubscriptionStats = (id: string) => apiClient.delete(`${V2}/subscriptions/${enc(id)}/stats`)
+export const resetSubscriptionStats = (id: string) => apiClient.delete(`${V1}/subscriptions/${enc(id)}/stats`)
 
 export const testSubscription = (id: string, entityId?: string) =>
   apiClient
-    .post<{ ok: boolean; latencyMs: number; error?: string; entityId: string }>(`${V2}/subscriptions/${enc(id)}/test`, { entityId }, { timeout: 70000 })
+    .post<{ ok: boolean; latencyMs: number; error?: string; entityId: string }>(`${V1}/subscriptions/${enc(id)}/test`, { entityId }, { timeout: 70000 })
     .then((r) => r.data)
 
 export const previewSubscription = (draft: Partial<SubscriptionInput>) =>
-  apiClient.post<{ entities: Entity[]; count: number }>(`${V2}/subscriptions/preview`, draft).then((r) => r.data)
+  apiClient.post<{ entities: Entity[]; count: number }>(`${V1}/subscriptions/preview`, draft).then((r) => r.data)
 
 export const validateExpression = (expression: string) =>
   apiClient
-    .post<{ valid: boolean; attrs?: string[]; error?: string; position?: number | null }>(`${V2}/expressions/validate`, { expression })
+    .post<{ valid: boolean; attrs?: string[]; error?: string; position?: number | null }>(`${V1}/expressions/validate`, { expression })
     .then((r) => r.data)
 
 export const listDlq = (id: string) =>
-  apiClient.get<{ items: DlqItem[] }>(`${V2}/subscriptions/${enc(id)}/dlq`).then((r) => r.data.items)
+  apiClient.get<{ items: DlqItem[] }>(`${V1}/subscriptions/${enc(id)}/dlq`).then((r) => r.data.items)
 
 export const replayDlq = (id: string, ids?: string[]) =>
-  apiClient.post<{ replayed: number }>(`${V2}/subscriptions/${enc(id)}/dlq/replay`, { ids }).then((r) => r.data)
+  apiClient.post<{ replayed: number }>(`${V1}/subscriptions/${enc(id)}/dlq/replay`, { ids }).then((r) => r.data)
 
 export const purgeDlq = (id: string, ids?: string[]) =>
-  apiClient.delete<{ purged: number }>(`${V2}/subscriptions/${enc(id)}/dlq`, { data: { ids } }).then((r) => r.data)
+  apiClient.delete<{ purged: number }>(`${V1}/subscriptions/${enc(id)}/dlq`, { data: { ids } }).then((r) => r.data)
 
 // ─── History, commands, ingest ───────────────────────────────────────────────
 
@@ -424,21 +424,21 @@ export interface Command {
 }
 
 export const getHistory = (id: string, params: { attrs?: string; from?: string; to?: string; maxPoints?: number }) =>
-  apiClient.get<HistorySeries>(`${V2}/entities/${enc(id)}/history`, { params, timeout: 30000 }).then((r) => r.data)
+  apiClient.get<HistorySeries>(`${V1}/entities/${enc(id)}/history`, { params, timeout: 30000 }).then((r) => r.data)
 
 export const getHistoryAttributes = (id: string) =>
-  apiClient.get<{ attributes: HistoryAttribute[] }>(`${V2}/entities/${enc(id)}/history/attributes`).then((r) => r.data.attributes)
+  apiClient.get<{ attributes: HistoryAttribute[] }>(`${V1}/entities/${enc(id)}/history/attributes`).then((r) => r.data.attributes)
 
 export const getHistoryRaw = (id: string, attr: string, params: { from?: string; to?: string; limit?: number }) =>
   apiClient
-    .get<{ samples: { t: string; value: unknown; quality: string | null }[] }>(`${V2}/entities/${enc(id)}/history/${enc(attr)}/raw`, { params })
+    .get<{ samples: { t: string; value: unknown; quality: string | null }[] }>(`${V1}/entities/${enc(id)}/history/${enc(attr)}/raw`, { params })
     .then((r) => r.data.samples)
 
 export const sendCommand = (id: string, attr: string, value: unknown) =>
-  apiClient.post<Command>(`${V2}/entities/${enc(id)}/attrs/${enc(attr)}/command`, { value }, { timeout: 20000 }).then((r) => r.data)
+  apiClient.post<Command>(`${V1}/entities/${enc(id)}/attrs/${enc(attr)}/command`, { value }, { timeout: 20000 }).then((r) => r.data)
 
 export const listCommands = (params: { entityId?: string; status?: CommandStatus; limit?: number } = {}) =>
-  apiClient.get<{ commands: Command[] }>(`${V2}/commands`, { params }).then((r) => r.data.commands)
+  apiClient.get<{ commands: Command[] }>(`${V1}/commands`, { params }).then((r) => r.data.commands)
 
 // ─── Cluster (superadmin) ────────────────────────────────────────────────────
 
@@ -473,7 +473,7 @@ export interface ClusterStatus {
   }
 }
 
-export const getCluster = () => apiClient.get<ClusterStatus>(`${V2}/cluster`).then((r) => r.data)
+export const getCluster = () => apiClient.get<ClusterStatus>(`${V1}/cluster`).then((r) => r.data)
 
 // ─── Health ──────────────────────────────────────────────────────────────────
 
@@ -489,4 +489,4 @@ export interface BrokerHealth {
   error: string | null
 }
 
-export const getBrokerHealth = () => apiClient.get<BrokerHealth>(`${V2}/health`).then((r) => r.data)
+export const getBrokerHealth = () => apiClient.get<BrokerHealth>(`${V1}/health`).then((r) => r.data)

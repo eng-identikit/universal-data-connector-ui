@@ -8,9 +8,9 @@ export const getBaseUrl = () => localStorage.getItem('udc-api-url') || ''
 export const getWsUrl = (apiBaseUrl: string) => {
   if (!apiBaseUrl) {
     const proto = window.location.protocol === 'https:' ? 'wss' : 'ws'
-    return `${proto}://${window.location.host}/api/v2/stream`
+    return `${proto}://${window.location.host}/api/v1/stream`
   }
-  return `${apiBaseUrl.replace(/^http/, 'ws').replace(/\/$/, '')}/api/v2/stream`
+  return `${apiBaseUrl.replace(/^http/, 'ws').replace(/\/$/, '')}/api/v1/stream`
 }
 
 /** Error with the HTTP status and the broker error payload. */
@@ -49,7 +49,7 @@ async function refreshTokens(): Promise<Tokens | null> {
   const tokens = session.getTokens()
   if (!tokens) return null
   try {
-    const res = await axios.post(`${getBaseUrl()}/api/v2/auth/refresh`, { refreshToken: tokens.refreshToken })
+    const res = await axios.post(`${getBaseUrl()}/api/v1/auth/refresh`, { refreshToken: tokens.refreshToken })
     const next = { accessToken: res.data.accessToken, refreshToken: res.data.refreshToken }
     session.setTokens(next)
     return next
@@ -76,14 +76,14 @@ export function getStreamUrl() {
   if (tokens) params.set('access_token', tokens.accessToken)
   const tenant = session.getTenant()
   if (tenant) params.set('tenant', tenant)
-  return `${origin}/api/v2/stream?${params}`
+  return `${origin}/api/v1/stream?${params}`
 }
 
 apiClient.interceptors.response.use(
   (res) => res,
   async (err) => {
     const original = err.config as (AxiosRequestConfig & { _retried?: boolean }) | undefined
-    const isAuthCall = original?.url?.includes('/api/v2/auth/')
+    const isAuthCall = original?.url?.includes('/api/v1/auth/')
     if (err.response?.status === 401 && original && !original._retried && !isAuthCall && session.getTokens()) {
       original._retried = true
       const tokens = await refreshSession()

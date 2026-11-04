@@ -53,7 +53,7 @@ The Vite dev server proxies `/api` (including the WebSocket stream) and `/health
 npm run build      # type-check and build to dist/
 ```
 
-The `Dockerfile` serves the build with nginx and proxies `/api` and `/api/v2/stream` to `${UDC_BACKEND}` (default `udc:3000`, set by Compose and by the Helm chart).
+The `Dockerfile` serves the build with nginx and proxies `/api` and `/api/v1/stream` to `${UDC_BACKEND}` (default `udc:3000`, set by Compose and by the Helm chart).
 
 ## 📁 Project Structure
 
@@ -63,7 +63,7 @@ src/
 │   ├── client.ts         # Axios instance: base URL, token, X-Tenant, refresh on 401, stream URL
 │   ├── session.ts        # Tokens and selected tenant in localStorage
 │   ├── broker.ts         # Broker API: entities, subscriptions, history, commands, admin, cluster
-│   ├── endpoints.ts      # System API (/api/v2/system): status, sources, mapping, storage
+│   ├── endpoints.ts      # System API (/api/v1/system): status, sources, mapping, storage
 │   └── types.ts
 ├── components/           # Layout (sidebar, top bar, user menu), EntityHistory, EntityMap, dialogs
 ├── context/              # AppContext (theme, language, API URL), AuthContext (session, tenant, role)
@@ -75,9 +75,9 @@ src/
 
 ## 🔌 Backend API
 
-- **Broker API** (`/api/v2`): see the [broker guide](../universal-data-connector/docs/Broker.md).
-- **System API** (`/api/v2/system`): see the [API documentation](../universal-data-connector/docs/API.md).
-- **Live data**: `ws(s)://<host>/api/v2/stream?access_token=…&tenant=…`. On close code `4001` (token expired) the UI refreshes the token and reconnects.
+- **Broker API** (`/api/v1`): see the [broker guide](../universal-data-connector/docs/Broker.md).
+- **System API** (`/api/v1/system`): see the [API documentation](../universal-data-connector/docs/API.md).
+- **Live data**: `ws(s)://<host>/api/v1/stream?access_token=…&tenant=…`. On close code `4001` (token expired) the UI refreshes the token and reconnects.
 
 ## 🛠️ Tech Stack
 
