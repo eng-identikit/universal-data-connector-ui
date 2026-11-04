@@ -68,6 +68,9 @@ export interface Source {
   enabled: boolean
   config: Record<string, unknown>
   tags?: string[]
+  /** Broker tenant that receives this source's devices as entities */
+  tenant?: string
+  entityIdPrefix?: string
   runtime?: ConnectorRuntime
 }
 

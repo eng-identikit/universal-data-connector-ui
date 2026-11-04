@@ -4,13 +4,13 @@ import { session, type Tokens } from './session'
 // Base URL from localStorage (Settings). Empty = same origin (Vite proxy in dev, nginx in Docker).
 export const getBaseUrl = () => localStorage.getItem('udc-api-url') || ''
 
-/** WebSocket URL for the given API base URL (same origin → /ws proxy). */
+/** Broker stream URL (without credentials) for the given API base URL; empty = same origin. */
 export const getWsUrl = (apiBaseUrl: string) => {
   if (!apiBaseUrl) {
     const proto = window.location.protocol === 'https:' ? 'wss' : 'ws'
-    return `${proto}://${window.location.host}/ws`
+    return `${proto}://${window.location.host}/api/v2/stream`
   }
-  return apiBaseUrl.replace(/^http/, 'ws').replace(':3000', ':3001')
+  return `${apiBaseUrl.replace(/^http/, 'ws').replace(/\/$/, '')}/api/v2/stream`
 }
 
 /** Error with the HTTP status and the broker error payload. */

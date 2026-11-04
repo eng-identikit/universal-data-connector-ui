@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import {
   Box,
   Typography,
-  Button,
   Card,
   CardContent,
   Grid,
@@ -41,9 +40,7 @@ import {
   CartesianGrid,
   Tooltip as ChartTooltip,
 } from 'recharts'
-import { useWebSocket, type WSMessage } from '../../hooks/useWebSocket'
-import { useAppContext } from '../../context/AppContext'
-import { getWsUrl } from '../../api/client'
+import { useBrokerStream, type StreamMessage } from '../../hooks/useBrokerStream'
 import StatusChip from '../../components/StatusChip'
 
 // ─── Live buffer model ───────────────────────────────────────────────────────
@@ -84,22 +81,6 @@ interface RawItem {
   body: unknown
 }
 
-interface Measurement {
-  id?: string
-  name?: string
-  type?: string
-  unit?: string
-  value?: unknown
-}
-
-interface Device {
-  id?: string
-  sourceId?: string
-  measurements?: Measurement[]
-  metadata?: { timestamp?: string; source?: string; sourceId?: string; [k: string]: unknown }
-  timestamp?: string
-}
-
 const toNumber = (v: unknown): number | null => {
   if (typeof v === 'number') return Number.isFinite(v) ? v : null
   if (typeof v === 'boolean') return v ? 1 : 0
@@ -115,21 +96,6 @@ const parseTs = (...candidates: unknown[]) => {
     }
   }
   return Date.now()
-}
-
-/**
- * The engine broadcasts `data` messages in two shapes:
- *  - { sourceId, originalData, mappedData: Device, timestamp }
- *  - Device itself ({ id, type, measurements, metadata })
- */
-function extractDevice(payload: unknown): { sourceId: string; device: Device; ts: number } | null {
-  if (!payload || typeof payload !== 'object') return null
-  const p = payload as { sourceId?: string; mappedData?: Device; timestamp?: string } & Device
-  const device: Device = p.mappedData ?? p
-  if (!Array.isArray(device.measurements)) return null
-  const sourceId =
-    p.sourceId ?? device.sourceId ?? device.metadata?.sourceId ?? device.metadata?.source ?? device.id ?? 'unknown'
-  return { sourceId: String(sourceId), device, ts: parseTs(device.metadata?.timestamp, p.timestamp, device.timestamp) }
 }
 
 // Keep at most `n` points, always including the last one
@@ -268,9 +234,6 @@ const emptySnapshot = (): Snapshot => ({ now: Date.now(), series: [], raw: [], s
 
 export default function LiveData() {
   const { t } = useTranslation()
-  const { apiBaseUrl } = useAppContext()
-
-  const wsUrl = getWsUrl(apiBaseUrl)
 
   const [tab, setTab] = useState<'charts' | 'values' | 'raw'>('charts')
   const [windowKey, setWindowKey] = useState('5m')
@@ -286,48 +249,43 @@ export default function LiveData() {
   const arrivalsRef = useRef<number[]>([])
   const totalRef = useRef(0)
 
-  const ingest = useCallback((msg: WSMessage) => {
+  // Broker stream: every entity change; one series per entity attribute, grouped by entity type
+  const ingest = useCallback((msg: StreamMessage) => {
+    if (msg.type !== 'entity') return
     const now = Date.now()
     totalRef.current++
     arrivalsRef.current.push(now)
 
-    if (msg.type === 'sourceStatus' && typeof msg.sourceId === 'string') {
-      statusRef.current.set(msg.sourceId, String(msg.status ?? 'unknown'))
-    }
-
-    let sourceId = typeof msg.sourceId === 'string' ? msg.sourceId : ''
-    if (msg.type === 'data') {
-      const extracted = extractDevice(msg.payload ?? msg.data)
-      if (extracted) {
-        const { device, ts } = extracted
-        sourceId = extracted.sourceId
-        const deviceId = String(device.id ?? sourceId)
-        for (const m of device.measurements ?? []) {
-          const measId = String(m.id ?? m.name ?? '?')
-          const key = `${sourceId}/${deviceId}/${measId}`
-          let s = seriesRef.current.get(key)
-          if (!s) {
-            s = { key, sourceId, deviceId, measId, last: undefined, lastTs: 0, points: [] }
-            seriesRef.current.set(key, s)
-          }
-          s.type = m.type ?? s.type
-          s.unit = m.unit ?? s.unit
-          s.last = m.value
-          s.lastTs = ts
-          const v = toNumber(m.value)
-          if (v !== null) {
-            s.points.push({ x: ts, v })
-            if (s.points.length > MAX_POINTS) s.points.splice(0, s.points.length - MAX_POINTS)
-          }
-        }
+    const { entity, op } = msg
+    const sourceId = entity.type
+    for (const [measId, attr] of Object.entries(entity.attrs)) {
+      if (attr.type === 'relationship') continue
+      const key = `${sourceId}/${entity.id}/${measId}`
+      let s = seriesRef.current.get(key)
+      if (!s) {
+        s = { key, sourceId, deviceId: entity.id, measId, last: undefined, lastTs: 0, points: [] }
+        seriesRef.current.set(key, s)
+      }
+      const ts = parseTs(attr.ts, entity.updatedAt)
+      s.type = attr.type
+      s.unit = attr.unit ?? s.unit
+      s.last = attr.value
+      // Unchanged attributes keep their timestamp: no new sample
+      if (ts === s.lastTs) continue
+      s.lastTs = ts
+      const v = toNumber(attr.value)
+      if (v !== null) {
+        s.points.push({ x: ts, v })
+        if (s.points.length > MAX_POINTS) s.points.splice(0, s.points.length - MAX_POINTS)
       }
     }
 
-    rawRef.current.unshift({ ts: parseTs(msg.timestamp), kind: msg.type ?? '?', sourceId, body: msg.payload ?? msg.data ?? msg })
+    rawRef.current.unshift({ ts: parseTs(entity.updatedAt), kind: op, sourceId, body: entity })
     if (rawRef.current.length > RAW_BUFFER) rawRef.current.length = RAW_BUFFER
   }, [])
 
-  const { connected, error, connect } = useWebSocket(wsUrl, true, { onMessage: ingest, bufferSize: 0 })
+  // Reconnects by itself (and refreshes the token) when the connection drops
+  const { connected, error } = useBrokerStream([{ id: 'live', entities: {} }], ingest)
 
   // Periodic snapshot: trims old samples and publishes a copy to render (frozen while paused)
   useEffect(() => {
@@ -427,11 +385,6 @@ export default function LiveData() {
               <DeleteSweepIcon />
             </IconButton>
           </Tooltip>
-          {!connected && (
-            <Button size="small" variant="outlined" onClick={connect}>
-              {t('liveData.reconnect')}
-            </Button>
-          )}
         </Box>
       </Box>
 

@@ -14,8 +14,27 @@ import {
   Alert,
 } from '@mui/material'
 import { ATTR_TYPES, type Attribute, type AttrType } from '../../api/broker'
+import { getSources } from '../../api/endpoints'
+import type { Source } from '../../api/types'
 
 const NAME_RE = /^[A-Za-z_][A-Za-z0-9_]{0,63}$/
+
+// Write call templates per connector type ("$value" is replaced by the commanded value)
+const COMMAND_TEMPLATES: Record<string, { method: string; args: unknown[] }> = {
+  opcua: { method: 'writeNode', args: ['ns=2;s=Setpoint', '$value', 'Double'] },
+  modbus: { method: 'writeRegister', args: [100, '$value', 'holding'] },
+  s7: { method: 'writeVariable', args: ['DB1,REAL0', '$value'] },
+  'siemens-s7': { method: 'writeVariable', args: ['DB1,REAL0', '$value'] },
+  cip: { method: 'writeTag', args: ['Setpoint', '$value'] },
+  'ethernet-ip': { method: 'writeTag', args: ['Setpoint', '$value'] },
+  bacnet: { method: 'writeObject', args: [1234, 2, 1, '$value'] },
+  melsec: { method: 'writeDevice', args: ['D', 100, '$value', 'word'] },
+  ethercat: { method: 'writeOutput', args: ['EL2008', 'Channel1', '$value'] },
+  profinet: { method: 'writeOutput', args: ['device1', 'output1', '$value'] },
+  aas: { method: 'writeProperty', args: ['Submodel', 'Property', '$value'] },
+  i3x: { method: 'writeValue', args: ['elementId', '$value'] },
+  dds: { method: 'writeOutput', args: ['output', '$value'] },
+}
 
 interface Props {
   open: boolean
@@ -38,6 +57,9 @@ interface FormState {
   source: string
   writable: boolean
   meta: string
+  commandConnector: string
+  commandMethod: string
+  commandArgs: string
 }
 
 // datetime-local wants 'YYYY-MM-DDTHH:mm' in local time
@@ -66,6 +88,9 @@ function initialState(name?: string, attr?: Attribute): FormState {
     source: attr?.source ?? '',
     writable: !!attr?.writable,
     meta: attr?.meta ? JSON.stringify(attr.meta, null, 2) : '',
+    commandConnector: String(attr?.command?.connector ?? ''),
+    commandMethod: String(attr?.command?.method ?? ''),
+    commandArgs: attr?.command?.args ? JSON.stringify(attr.command.args) : '["$value"]',
   }
 }
 
@@ -98,6 +123,17 @@ function buildAttr(f: FormState): Partial<Attribute> {
   if (f.quality) attr.quality = f.quality as Attribute['quality']
   if (f.source.trim()) attr.source = f.source.trim()
   if (f.writable) attr.writable = true
+  if (f.writable && f.commandConnector.trim()) {
+    let args: unknown
+    try {
+      args = JSON.parse(f.commandArgs || '["$value"]')
+    } catch {
+      throw new Error('attr.errArgs')
+    }
+    if (!Array.isArray(args)) throw new Error('attr.errArgs')
+    if (!/^write[A-Za-z]*$/.test(f.commandMethod.trim())) throw new Error('attr.errMethod')
+    attr.command = { connector: f.commandConnector.trim(), method: f.commandMethod.trim(), args }
+  }
   if (f.meta.trim()) {
     try {
       const meta = JSON.parse(f.meta)
@@ -115,14 +151,28 @@ export default function AttributeDialog({ open, name, attr, existingNames, onCan
   const [form, setForm] = useState<FormState>(() => initialState(name, attr))
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [sources, setSources] = useState<Source[]>([])
   const editing = name !== undefined
 
   useEffect(() => {
     if (open) {
       setForm(initialState(name, attr))
       setError(null)
+      getSources()
+        .then((r) => setSources(r.sources))
+        .catch(() => setSources([]))
     }
   }, [open, name, attr])
+
+  const pickConnector = (id: string) => {
+    const template = COMMAND_TEMPLATES[sources.find((s) => s.id === id)?.type ?? '']
+    setForm((f) => ({
+      ...f,
+      commandConnector: id,
+      // Prefill only when nothing was configured yet
+      ...(template && !f.commandMethod && { commandMethod: template.method, commandArgs: JSON.stringify(template.args) }),
+    }))
+  }
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) => setForm((f) => ({ ...f, [key]: value }))
 
@@ -289,6 +339,51 @@ export default function AttributeDialog({ open, name, attr, existingNames, onCan
               label={t('attr.writable')}
             />
           </Grid>
+          {form.writable && (
+            <>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  select
+                  label={t('commands.connector')}
+                  value={form.commandConnector}
+                  onChange={(e) => pickConnector(e.target.value)}
+                  fullWidth
+                  size="small"
+                >
+                  <MenuItem value="">—</MenuItem>
+                  {sources.map((s) => (
+                    <MenuItem key={s.id} value={s.id}>
+                      {s.id} ({s.type})
+                    </MenuItem>
+                  ))}
+                  {form.commandConnector && !sources.some((s) => s.id === form.commandConnector) && (
+                    <MenuItem value={form.commandConnector}>{form.commandConnector}</MenuItem>
+                  )}
+                </TextField>
+              </Grid>
+              <Grid item xs={12} sm={3}>
+                <TextField
+                  label={t('commands.method')}
+                  value={form.commandMethod}
+                  onChange={(e) => set('commandMethod', e.target.value)}
+                  fullWidth
+                  size="small"
+                  placeholder="writeNode"
+                />
+              </Grid>
+              <Grid item xs={12} sm={5}>
+                <TextField
+                  label={t('commands.args')}
+                  value={form.commandArgs}
+                  onChange={(e) => set('commandArgs', e.target.value)}
+                  fullWidth
+                  size="small"
+                  helperText={t('commands.argsHelp')}
+                  InputProps={{ sx: { fontFamily: 'monospace', fontSize: '0.8rem' } }}
+                />
+              </Grid>
+            </>
+          )}
           <Grid item xs={12}>
             <TextField
               label={t('attr.meta')}

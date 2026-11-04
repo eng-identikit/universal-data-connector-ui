@@ -367,3 +367,62 @@ export const replayDlq = (id: string, ids?: string[]) =>
 
 export const purgeDlq = (id: string, ids?: string[]) =>
   apiClient.delete<{ purged: number }>(`${V2}/subscriptions/${enc(id)}/dlq`, { data: { ids } }).then((r) => r.data)
+
+// ─── History, commands, ingest ───────────────────────────────────────────────
+
+export interface HistoryBucket {
+  t: string
+  avg: number | null
+  min: number | null
+  max: number | null
+  last: unknown
+  samples: number
+}
+
+export interface HistorySeries {
+  from: string
+  to: string
+  bucketMs: number
+  series: Record<string, HistoryBucket[]>
+}
+
+export interface HistoryAttribute {
+  attr: string
+  samples: number
+  numeric: boolean
+  first: string
+  last: string
+}
+
+export type CommandStatus = 'pending' | 'sent' | 'succeeded' | 'failed'
+
+export interface Command {
+  id: string
+  entityId: string
+  attr: string
+  value: unknown
+  status: CommandStatus
+  connector: string | null
+  target: { connector: string; method: string; args: unknown[] } | null
+  error: string | null
+  createdBy: string | null
+  createdAt: string
+  completedAt: string | null
+}
+
+export const getHistory = (id: string, params: { attrs?: string; from?: string; to?: string; maxPoints?: number }) =>
+  apiClient.get<HistorySeries>(`${V2}/entities/${enc(id)}/history`, { params, timeout: 30000 }).then((r) => r.data)
+
+export const getHistoryAttributes = (id: string) =>
+  apiClient.get<{ attributes: HistoryAttribute[] }>(`${V2}/entities/${enc(id)}/history/attributes`).then((r) => r.data.attributes)
+
+export const getHistoryRaw = (id: string, attr: string, params: { from?: string; to?: string; limit?: number }) =>
+  apiClient
+    .get<{ samples: { t: string; value: unknown; quality: string | null }[] }>(`${V2}/entities/${enc(id)}/history/${enc(attr)}/raw`, { params })
+    .then((r) => r.data.samples)
+
+export const sendCommand = (id: string, attr: string, value: unknown) =>
+  apiClient.post<Command>(`${V2}/entities/${enc(id)}/attrs/${enc(attr)}/command`, { value }, { timeout: 20000 }).then((r) => r.data)
+
+export const listCommands = (params: { entityId?: string; status?: CommandStatus; limit?: number } = {}) =>
+  apiClient.get<{ commands: Command[] }>(`${V2}/commands`, { params }).then((r) => r.data.commands)

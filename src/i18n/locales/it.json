@@ -110,7 +110,11 @@
       "password": "Password",
       "tags": "Tag (separati da virgola)",
       "advancedConfig": "Configurazione Avanzata (JSON)",
-      "advancedConfigHelp": "Impostazioni aggiuntive specifiche del connettore in formato JSON"
+      "advancedConfigHelp": "Impostazioni aggiuntive specifiche del connettore in formato JSON",
+      "tenant": "Tenant",
+      "tenantHelp": "I dispositivi di questa sorgente diventano entità di questo tenant",
+      "entityIdPrefix": "Prefisso ID entità",
+      "entityIdPrefixHelp": "Aggiunto davanti all'ID del dispositivo (opzionale)"
     }
   },
   "mapping": {
@@ -172,8 +176,8 @@
     "connected": "Connesso - Ricezione dati in tempo reale",
     "disconnected": "Disconnesso",
     "reconnect": "Riconnetti",
-    "filterBySource": "Filtra per Sorgente",
-    "allSources": "Tutte le Sorgenti",
+    "filterBySource": "Filtra per tipo",
+    "allSources": "Tutti i tipi",
     "pauseStream": "Pausa",
     "resumeStream": "Riprendi",
     "clearData": "Cancella",
@@ -257,7 +261,18 @@
     "dataRange": "Dati disponibili",
     "unavailable": "TimescaleDB non raggiungibile",
     "notConfigured": "TimescaleDB non è configurato. Configuralo in Archiviazione per registrare e consultare lo storico.",
-    "goToStorage": "Apri Archiviazione"
+    "goToStorage": "Apri Archiviazione",
+    "subtitle": "Andamento nel tempo degli attributi di un'entità",
+    "pickEntity": "Entità",
+    "pickHint": "Cerca un'entità per vederne lo storico.",
+    "noHistory": "Nessuno storico registrato per questa entità.",
+    "charts": "Grafici",
+    "table": "Tabella",
+    "exportCsv": "Esporta CSV",
+    "nonNumeric": "Attributo non numerico: {{count}} intervalli, vedi la vista tabella",
+    "noSamplesInRange": "Nessun campione nell'intervallo",
+    "time": "Ora",
+    "last": "Ultimo valore"
   },
   "roles": {
     "admin": "Admin",
@@ -343,7 +358,9 @@
     "errJson": "JSON non valido",
     "errMeta": "I metadata devono essere un oggetto JSON",
     "deleteTitle": "Elimina attributo",
-    "deleteMessage": "Eliminare l'attributo {{name}}?"
+    "deleteMessage": "Eliminare l'attributo {{name}}?",
+    "errArgs": "Gli argomenti devono essere un array JSON",
+    "errMethod": "Il metodo deve essere un metodo di scrittura del connettore (es. writeNode)"
   },
   "admin": {
     "title": "Amministrazione",
@@ -504,5 +521,25 @@
     "liveWaiting": "In attesa di notifiche…",
     "deleteTitle": "Elimina subscription",
     "deleteMessage": "Eliminare la subscription {{name}}? Le notifiche in coda e la DLQ vengono scartate."
+  },
+  "commands": {
+    "title": "Comandi",
+    "help": "Valori inviati ai dispositivi tramite gli attributi scrivibili.",
+    "send": "Invia comando",
+    "sendTitle": "Comando su {{name}}",
+    "noTarget": "Configura connettore e metodo nell'attributo (Modifica → Scrivibile).",
+    "connector": "Connettore",
+    "method": "Metodo",
+    "args": "Argomenti (JSON)",
+    "argsHelp": "\"$value\" viene sostituito dal valore inviato",
+    "created": "Inviato il",
+    "by": "Da",
+    "none": "Nessun comando inviato",
+    "status": {
+      "pending": "In attesa",
+      "sent": "Inviato",
+      "succeeded": "Eseguito",
+      "failed": "Fallito"
+    }
   }
 }

@@ -48,6 +48,9 @@ import { ApiError } from '../../api/client'
 import { useCan } from '../../context/AuthContext'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import AttributeDialog from './AttributeDialog'
+import { CommandDialog, CommandsList } from './CommandsPanel'
+import EntityHistory from '../../components/EntityHistory'
+import SettingsRemoteIcon from '@mui/icons-material/SettingsRemote'
 import { formatTime, formatValue, qualityColor } from './format'
 
 const entityPath = (id: string) => `/entities/${encodeURIComponent(id)}`
@@ -108,7 +111,9 @@ export default function EntityDetail() {
   const [entity, setEntity] = useState<Entity | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [conflict, setConflict] = useState(false)
-  const [tab, setTab] = useState<'attrs' | 'relations' | 'json'>('attrs')
+  const [tab, setTab] = useState<'attrs' | 'history' | 'relations' | 'commands' | 'json'>('attrs')
+  const [commandAttr, setCommandAttr] = useState<string | null>(null)
+  const [commandsKey, setCommandsKey] = useState(0)
   const [depth, setDepth] = useState(2)
   const [children, setChildren] = useState<EntityGraph | null>(null)
   const [parents, setParents] = useState<EntityGraph | null>(null)
@@ -237,7 +242,9 @@ export default function EntityDetail() {
       <Card>
         <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ px: 2, borderBottom: 1, borderColor: 'divider' }}>
           <Tab value="attrs" label={`${t('entities.attributes')} (${attrs.length})`} />
+          <Tab value="history" label={t('nav.history')} />
           <Tab value="relations" label={t('entity.relations')} />
+          <Tab value="commands" label={t('commands.title')} />
           <Tab value="json" label="JSON" />
         </Tabs>
 
@@ -315,6 +322,13 @@ export default function EntityDetail() {
                       </TableCell>
                       {canWrite && (
                         <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                          {attr.writable && (
+                            <Tooltip title={t('commands.send')}>
+                              <IconButton size="small" color="primary" onClick={() => setCommandAttr(name)}>
+                                <SettingsRemoteIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          )}
                           <IconButton size="small" onClick={() => setAttrDialog({ name, attr })}>
                             <EditIcon fontSize="small" />
                           </IconButton>
@@ -329,6 +343,24 @@ export default function EntityDetail() {
               </Table>
             </TableContainer>
           </>
+        )}
+
+        {tab === 'history' && (
+          <CardContent>
+            <EntityHistory
+              entityId={entity.id}
+              units={Object.fromEntries(Object.entries(entity.attrs).map(([k, a]) => [k, a.unit]))}
+            />
+          </CardContent>
+        )}
+
+        {tab === 'commands' && (
+          <CardContent>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              {t('commands.help')}
+            </Typography>
+            <CommandsList entityId={entity.id} refreshKey={commandsKey} />
+          </CardContent>
         )}
 
         {tab === 'relations' && (
@@ -468,6 +500,15 @@ export default function EntityDetail() {
             throw err
           }
         }}
+      />
+
+      <CommandDialog
+        open={!!commandAttr}
+        entityId={entity.id}
+        name={commandAttr ?? ''}
+        attr={commandAttr ? entity.attrs[commandAttr] : undefined}
+        onClose={() => setCommandAttr(null)}
+        onSent={() => setCommandsKey((k) => k + 1)}
       />
 
       <ConfirmDialog

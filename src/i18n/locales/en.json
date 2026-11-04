@@ -110,7 +110,11 @@
       "password": "Password",
       "tags": "Tags (comma-separated)",
       "advancedConfig": "Advanced Configuration (JSON)",
-      "advancedConfigHelp": "Additional connector-specific settings in JSON format"
+      "advancedConfigHelp": "Additional connector-specific settings in JSON format",
+      "tenant": "Tenant",
+      "tenantHelp": "Devices of this source become entities of this tenant",
+      "entityIdPrefix": "Entity ID prefix",
+      "entityIdPrefixHelp": "Prepended to the device ID (optional)"
     }
   },
   "mapping": {
@@ -172,8 +176,8 @@
     "connected": "Connected - Receiving live data",
     "disconnected": "Disconnected",
     "reconnect": "Reconnect",
-    "filterBySource": "Filter by Source",
-    "allSources": "All Sources",
+    "filterBySource": "Filter by type",
+    "allSources": "All types",
     "pauseStream": "Pause",
     "resumeStream": "Resume",
     "clearData": "Clear",
@@ -257,7 +261,18 @@
     "dataRange": "Data available",
     "unavailable": "TimescaleDB is not reachable",
     "notConfigured": "TimescaleDB is not configured. Configure it in Storage to record and browse historical data.",
-    "goToStorage": "Open Storage"
+    "goToStorage": "Open Storage",
+    "subtitle": "Attribute values of an entity over time",
+    "pickEntity": "Entity",
+    "pickHint": "Search an entity to see its history.",
+    "noHistory": "No history recorded for this entity.",
+    "charts": "Charts",
+    "table": "Table",
+    "exportCsv": "Export CSV",
+    "nonNumeric": "Non-numeric attribute: {{count}} intervals, see the table view",
+    "noSamplesInRange": "No samples in range",
+    "time": "Time",
+    "last": "Last value"
   },
   "roles": {
     "admin": "Admin",
@@ -343,7 +358,9 @@
     "errJson": "Invalid JSON",
     "errMeta": "Metadata must be a JSON object",
     "deleteTitle": "Delete attribute",
-    "deleteMessage": "Delete attribute {{name}}?"
+    "deleteMessage": "Delete attribute {{name}}?",
+    "errArgs": "Arguments must be a JSON array",
+    "errMethod": "Method must be a connector write method (e.g. writeNode)"
   },
   "admin": {
     "title": "Administration",
@@ -504,5 +521,25 @@
     "liveWaiting": "Waiting for notifications…",
     "deleteTitle": "Delete subscription",
     "deleteMessage": "Delete subscription {{name}}? Queued notifications and the DLQ are discarded."
+  },
+  "commands": {
+    "title": "Commands",
+    "help": "Values sent to devices through writable attributes.",
+    "send": "Send command",
+    "sendTitle": "Command on {{name}}",
+    "noTarget": "Configure connector and method on the attribute (Edit → Writable).",
+    "connector": "Connector",
+    "method": "Method",
+    "args": "Arguments (JSON)",
+    "argsHelp": "\"$value\" is replaced by the value sent",
+    "created": "Sent at",
+    "by": "By",
+    "none": "No commands sent",
+    "status": {
+      "pending": "Pending",
+      "sent": "Sent",
+      "succeeded": "Succeeded",
+      "failed": "Failed"
+    }
   }
 }

@@ -1,3 +1,4 @@
+import { useAuth } from '../../context/AuthContext'
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -15,7 +16,7 @@ import {
   Divider,
   Alert,
 } from '@mui/material'
-import { createSource, updateSource } from '../../api/endpoints'
+import { createSource, updateSource, reloadSources } from '../../api/endpoints'
 import type { Source } from '../../api/types'
 
 const CONNECTOR_TYPES = [
@@ -38,7 +39,7 @@ const CONNECTOR_TYPES = [
 // Default config fields per type
 const TYPE_DEFAULTS: Record<string, Record<string, unknown>> = {
   opcua: { endpointUrl: 'opc.tcp://localhost:4840', securityMode: 'None' },
-  mqtt: { url: 'mqtt://localhost:1883', topic: '#', clientId: '' },
+  mqtt: { broker: 'mqtt://localhost:1883', topics: ['sensors/#'], qos: 0 },
   modbus: { connectionType: 'tcp', host: 'localhost', port: 502 },
   http: { url: 'http://localhost/data', method: 'GET', interval: 5000 },
   s7: { host: '192.168.1.1', rack: 0, slot: 1, variables: {} },
@@ -101,6 +102,9 @@ export default function ConnectorDialog({ open, source, onClose, onSaved }: Conn
   const [id, setId] = useState('')
   const [type, setType] = useState('opcua')
   const [enabled, setEnabled] = useState(true)
+  const { user, tenant: currentTenant } = useAuth()
+  const [tenant, setTenant] = useState('default')
+  const [entityIdPrefix, setEntityIdPrefix] = useState('')
   const [configJson, setConfigJson] = useState('')
   const [tagsInput, setTagsInput] = useState('')
   const [jsonError, setJsonError] = useState<string | null>(null)
@@ -113,12 +117,16 @@ export default function ConnectorDialog({ open, source, onClose, onSaved }: Conn
         setId(source.id)
         setType(source.type)
         setEnabled(source.enabled)
+        setTenant(source.tenant ?? 'default')
+        setEntityIdPrefix(source.entityIdPrefix ?? '')
         setConfigJson(JSON.stringify(source.config, null, 2))
         setTagsInput(source.tags?.join(', ') ?? '')
       } else {
         setId('')
         setType('opcua')
         setEnabled(true)
+        setTenant(currentTenant ?? 'default')
+        setEntityIdPrefix('')
         setConfigJson(JSON.stringify(TYPE_DEFAULTS['opcua'], null, 2))
         setTagsInput('')
       }
@@ -161,6 +169,8 @@ export default function ConnectorDialog({ open, source, onClose, onSaved }: Conn
         id: id.trim(),
         type,
         enabled,
+        tenant,
+        ...(entityIdPrefix.trim() && { entityIdPrefix: entityIdPrefix.trim() }),
         config,
         tags: tagsInput
           .split(',')
@@ -173,6 +183,8 @@ export default function ConnectorDialog({ open, source, onClose, onSaved }: Conn
       } else {
         await createSource(payload)
       }
+      // Saving only writes sources.json: reload so the engine (re)starts the connector
+      await reloadSources()
       onSaved()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Save failed')
@@ -227,6 +239,35 @@ export default function ConnectorDialog({ open, source, onClose, onSaved }: Conn
                 <Switch checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
               }
               label={t('connectors.form.enabled')}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              select
+              label={t('connectors.form.tenant')}
+              value={tenant}
+              onChange={(e) => setTenant(e.target.value)}
+              fullWidth
+              size="small"
+              helperText={t('connectors.form.tenantHelp')}
+            >
+              {(user?.tenants ?? []).map((m) => (
+                <MenuItem key={m.tenant} value={m.tenant}>
+                  {m.name}
+                </MenuItem>
+              ))}
+              {!(user?.tenants ?? []).some((m) => m.tenant === tenant) && <MenuItem value={tenant}>{tenant}</MenuItem>}
+            </TextField>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              label={t('connectors.form.entityIdPrefix')}
+              value={entityIdPrefix}
+              onChange={(e) => setEntityIdPrefix(e.target.value)}
+              fullWidth
+              size="small"
+              placeholder="plant1:line3:"
+              helperText={t('connectors.form.entityIdPrefixHelp')}
             />
           </Grid>
 
