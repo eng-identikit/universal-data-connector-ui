@@ -22,6 +22,7 @@ import TranslateIcon from '@mui/icons-material/Translate'
 import LinkIcon from '@mui/icons-material/Link'
 import InfoIcon from '@mui/icons-material/Info'
 import { useAppContext } from '../../context/AppContext'
+import { getWsUrl } from '../../api/client'
 
 export default function Settings() {
   const { t } = useTranslation()
@@ -32,13 +33,13 @@ export default function Settings() {
   const [snackOpen, setSnackOpen] = useState(false)
 
   const handleSave = () => {
-    setApiBaseUrl(apiUrl.trim() || 'http://localhost:3000')
+    setApiBaseUrl(apiUrl.trim())
     setSnackOpen(true)
   }
 
   const handleReset = () => {
-    setApiUrl('http://localhost:3000')
-    setApiBaseUrl('http://localhost:3000')
+    setApiUrl('')
+    setApiBaseUrl('')
   }
 
   return (
@@ -120,11 +121,11 @@ export default function Settings() {
                 size="small"
                 helperText={t('settings.apiUrlHelp')}
                 sx={{ mb: 1 }}
-                placeholder="http://localhost:3000"
+                placeholder={window.location.origin}
               />
               <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
                 {t('settings.wsUrlHelp')}:{' '}
-                <code>{apiUrl.replace(/^http/, 'ws').replace(':3000', ':3001')}</code>
+                <code>{getWsUrl(apiUrl.trim())}</code>
               </Typography>
 
               <Box sx={{ display: 'flex', gap: 1 }}>
@@ -162,9 +163,9 @@ export default function Settings() {
                 </Grid>
                 <Grid item xs={12}>
                   <Alert severity="info" variant="outlined">
-                    UDC API: <strong>{apiBaseUrl}</strong>
+                    UDC API: <strong>{apiBaseUrl || window.location.origin}</strong>
                     &nbsp;·&nbsp;
-                    WebSocket: <strong>{apiBaseUrl.replace(/^http/, 'ws').replace(':3000', ':3001')}</strong>
+                    WebSocket: <strong>{getWsUrl(apiBaseUrl)}</strong>
                   </Alert>
                 </Grid>
               </Grid>

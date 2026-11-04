@@ -5,18 +5,23 @@ import {
   Tooltip,
   Typography,
   Chip,
+  TextField,
+  MenuItem,
   useTheme,
 } from '@mui/material'
 import LightModeIcon from '@mui/icons-material/LightMode'
 import DarkModeIcon from '@mui/icons-material/DarkMode'
 import CircleIcon from '@mui/icons-material/Circle'
 import { useAppContext } from '../../context/AppContext'
+import { useAuth } from '../../context/AuthContext'
 import { useUDCStatus } from '../../hooks/useUDCStatus'
+import UserMenu from './UserMenu'
 
 export default function TopBar() {
   const { t } = useTranslation()
   const { themeMode, toggleTheme, language, setLanguage } = useAppContext()
   const { status, error } = useUDCStatus()
+  const { user, tenant, setTenant } = useAuth()
   const theme = useTheme()
 
   const isOnline = !!status && !error
@@ -69,6 +74,24 @@ export default function TopBar() {
 
       {/* Right: Controls */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        {/* Tenant selector */}
+        {user && user.tenants.length > 0 && (
+          <TextField
+            select
+            size="small"
+            label={t('admin.tenant')}
+            value={tenant ?? ''}
+            onChange={(e) => setTenant(e.target.value)}
+            sx={{ minWidth: 160 }}
+          >
+            {user.tenants.map((m) => (
+              <MenuItem key={m.tenant} value={m.tenant}>
+                {m.name} <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>{t(`roles.${m.role}`)}</Typography>
+              </MenuItem>
+            ))}
+          </TextField>
+        )}
+
         {/* Language switcher */}
         <Box sx={{ display: 'flex', border: `1px solid ${theme.palette.divider}`, borderRadius: 2, overflow: 'hidden' }}>
           {(['it', 'en'] as const).map((lang) => (
@@ -98,6 +121,8 @@ export default function TopBar() {
             {themeMode === 'dark' ? <LightModeIcon fontSize="small" /> : <DarkModeIcon fontSize="small" />}
           </IconButton>
         </Tooltip>
+
+        <UserMenu />
       </Box>
     </Box>
   )

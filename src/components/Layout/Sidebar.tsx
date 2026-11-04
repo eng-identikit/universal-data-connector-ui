@@ -19,9 +19,13 @@ import StreamIcon from '@mui/icons-material/Stream'
 import TimelineIcon from '@mui/icons-material/Timeline'
 import SettingsIcon from '@mui/icons-material/Settings'
 import HubIcon from '@mui/icons-material/Hub'
+import CategoryIcon from '@mui/icons-material/Category'
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings'
+import { useAuth, useCan } from '../../context/AuthContext'
 
 const navItems = [
   { path: '/', labelKey: 'nav.dashboard', icon: <DashboardIcon /> },
+  { path: '/entities', labelKey: 'nav.entities', icon: <CategoryIcon /> },
   { path: '/connectors', labelKey: 'nav.connectors', icon: <DeviceHubIcon /> },
   { path: '/mapping', labelKey: 'nav.mapping', icon: <AccountTreeIcon /> },
   { path: '/storage', labelKey: 'nav.storage', icon: <StorageIcon /> },
@@ -34,6 +38,11 @@ export default function Sidebar() {
   const location = useLocation()
   const navigate = useNavigate()
   const theme = useTheme()
+  const { user } = useAuth()
+  const isTenantAdmin = useCan('admin')
+  const items = isTenantAdmin || user?.isSuperadmin
+    ? [...navItems, { path: '/admin', labelKey: 'nav.admin', icon: <AdminPanelSettingsIcon /> }]
+    : navItems
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -61,7 +70,7 @@ export default function Sidebar() {
 
       {/* Navigation */}
       <List sx={{ px: 1, pt: 1, flexGrow: 1 }}>
-        {navItems.map((item) => {
+        {items.map((item) => {
           const active =
             item.path === '/'
               ? location.pathname === '/'

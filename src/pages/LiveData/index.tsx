@@ -43,6 +43,7 @@ import {
 } from 'recharts'
 import { useWebSocket, type WSMessage } from '../../hooks/useWebSocket'
 import { useAppContext } from '../../context/AppContext'
+import { getWsUrl } from '../../api/client'
 import StatusChip from '../../components/StatusChip'
 
 // ─── Live buffer model ───────────────────────────────────────────────────────
@@ -269,7 +270,7 @@ export default function LiveData() {
   const { t } = useTranslation()
   const { apiBaseUrl } = useAppContext()
 
-  const wsUrl = apiBaseUrl.replace(/^http/, 'ws').replace(':3000', ':3001')
+  const wsUrl = getWsUrl(apiBaseUrl)
 
   const [tab, setTab] = useState<'charts' | 'values' | 'raw'>('charts')
   const [windowKey, setWindowKey] = useState('5m')

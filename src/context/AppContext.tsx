@@ -20,7 +20,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     () => localStorage.getItem('udc-language') || 'it',
   )
   const [apiBaseUrl, setApiBaseUrlState] = useState(
-    () => localStorage.getItem('udc-api-url') || 'http://localhost:3000',
+    () => localStorage.getItem('udc-api-url') || '',
   )
 
   // Sync i18n language on mount
@@ -42,7 +42,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const setApiBaseUrl = (url: string) => {
     setApiBaseUrlState(url)
-    localStorage.setItem('udc-api-url', url)
+    // Empty = same origin
+    if (url) localStorage.setItem('udc-api-url', url)
+    else localStorage.removeItem('udc-api-url')
   }
 
   return (
