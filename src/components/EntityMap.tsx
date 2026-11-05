@@ -1,3 +1,4 @@
+import { MONO } from '../theme'
 import { useEffect, useMemo, useRef } from 'react'
 import { MapContainer, TileLayer, CircleMarker, GeoJSON, Popup, useMap, useMapEvents } from 'react-leaflet'
 import type { LatLngBoundsExpression, Map as LeafletMap } from 'leaflet'
@@ -134,7 +135,7 @@ function EntityPopup({ entity }: { entity: Entity }) {
   const attrs = Object.entries(entity.attrs).filter(([, a]) => a.type !== 'relationship').slice(0, 4)
   return (
     <Popup>
-      <Link component={RouterLink} to={`/entities/${encodeURIComponent(entity.id)}`} fontFamily="monospace" fontWeight={600}>
+      <Link component={RouterLink} to={`/entities/${encodeURIComponent(entity.id)}`} fontFamily={MONO} fontWeight={600}>
         {entity.id}
       </Link>
       <Typography variant="caption" display="block" color="text.secondary">

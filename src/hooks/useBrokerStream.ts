@@ -14,7 +14,10 @@ const RECONNECT_MS = 3000
 
 /**
  * Authenticated connection to /api/v1/stream. Re-sends the subscriptions on
- * every (re)connect and refreshes the token when the server closes with 4001.
+ * every (re)connect.
+ *   4001 (token expired or session revoked): one token refresh, then reconnect;
+ *        a failed refresh ends the session (the client logs out).
+ *   4003 (forbidden, e.g. no access to the tenant): no retry, the reason is shown.
  * `onMessage` is read through a ref, so it does not need to be memoized.
  */
 export function useBrokerStream(
@@ -34,6 +37,8 @@ export function useBrokerStream(
     let ws: WebSocket | null = null
     let timer: ReturnType<typeof setTimeout> | null = null
     let closed = false
+    // A refresh already tried since the last successful welcome: a second 4001 stops retrying
+    let refreshed = false
 
     const connect = () => {
       ws = new WebSocket(getStreamUrl())
@@ -45,6 +50,7 @@ export function useBrokerStream(
           return
         }
         if (msg.type === 'welcome') {
+          refreshed = false
           setConnected(true)
           setError(null)
           // Subscriptions are only accepted after authentication completed
@@ -58,7 +64,20 @@ export function useBrokerStream(
       ws.onclose = async (evt) => {
         setConnected(false)
         if (closed) return
-        if (evt.code === 4001 && !(await refreshSession())) return
+        if (evt.code === 4003) {
+          setError(evt.reason || 'Forbidden')
+          return
+        }
+        if (evt.code === 4001) {
+          if (refreshed) {
+            setError(evt.reason || 'Unauthorized')
+            return
+          }
+          refreshed = true
+          const ok = await refreshSession()
+          // The component may have unmounted while refreshing
+          if (closed || !ok) return
+        }
         timer = setTimeout(connect, evt.code === 4001 ? 0 : RECONNECT_MS)
       }
     }

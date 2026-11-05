@@ -1,3 +1,4 @@
+import { MONO } from '../../theme'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -76,15 +77,15 @@ export function CommandsList({ entityId, refreshKey }: { entityId: string; refre
         {commands.map((c) => (
           <TableRow key={c.id} hover>
             <TableCell>{formatTime(c.createdAt)}</TableCell>
-            <TableCell sx={{ fontFamily: 'monospace' }}>{c.attr}</TableCell>
-            <TableCell sx={{ fontFamily: 'monospace' }}>{JSON.stringify(c.value)}</TableCell>
+            <TableCell sx={{ fontFamily: MONO }}>{c.attr}</TableCell>
+            <TableCell sx={{ fontFamily: MONO }}>{JSON.stringify(c.value)}</TableCell>
             <TableCell>
               <CommandStatusChip status={c.status} />
             </TableCell>
             <TableCell sx={{ fontSize: '0.75rem' }}>
               {c.connector}
               {c.target && (
-                <Typography variant="caption" color="text.secondary" display="block" fontFamily="monospace">
+                <Typography variant="caption" color="text.secondary" display="block" fontFamily={MONO}>
                   {c.target.method}({(c.target.args ?? []).map((a) => JSON.stringify(a)).join(', ')})
                 </Typography>
               )}

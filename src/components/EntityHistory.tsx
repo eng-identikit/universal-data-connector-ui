@@ -1,3 +1,4 @@
+import { MONO } from '../theme'
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -71,7 +72,7 @@ const AttrChart = memo(function AttrChart({ attr, points, from, to, unit }: { at
     <Card variant="outlined" sx={{ height: '100%' }}>
       <CardContent sx={{ pb: '12px !important' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mb: 1 }}>
-          <Typography variant="subtitle2" fontWeight={600} fontFamily="monospace">
+          <Typography variant="subtitle2" fontWeight={600} fontFamily={MONO}>
             {attr}
           </Typography>
           <Typography variant="body2" fontWeight={700}>
@@ -279,7 +280,7 @@ export default function EntityHistory({ entityId, units = {} }: Props) {
                 ) : (
                   <Card variant="outlined">
                     <CardContent>
-                      <Typography variant="subtitle2" fontFamily="monospace" fontWeight={600}>
+                      <Typography variant="subtitle2" fontFamily={MONO} fontWeight={600}>
                         {attr}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
@@ -312,11 +313,11 @@ export default function EntityHistory({ entityId, units = {} }: Props) {
               {rows.slice(0, 1000).map(({ attr, b }) => (
                 <TableRow key={`${attr}|${b.t}`}>
                   <TableCell>{new Date(b.t).toLocaleString()}</TableCell>
-                  <TableCell sx={{ fontFamily: 'monospace' }}>{attr}</TableCell>
+                  <TableCell sx={{ fontFamily: MONO }}>{attr}</TableCell>
                   <TableCell align="right">{fmt(b.avg)}</TableCell>
                   <TableCell align="right">{fmt(b.min)}</TableCell>
                   <TableCell align="right">{fmt(b.max)}</TableCell>
-                  <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>{JSON.stringify(b.last)}</TableCell>
+                  <TableCell sx={{ fontFamily: MONO, fontSize: '0.75rem' }}>{JSON.stringify(b.last)}</TableCell>
                   <TableCell align="right">{b.samples}</TableCell>
                 </TableRow>
               ))}

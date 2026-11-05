@@ -271,6 +271,10 @@ export interface SubscriptionNotify {
   attrs?: string[]
   format?: 'full' | 'values'
   perEntity?: boolean
+  /** Output transformer from the library (by id) */
+  transformer?: string | null
+  /** Inline output transformer (JSONata) */
+  transform?: { expression: string } | null
 }
 
 export interface SubscriptionStats {
@@ -284,6 +288,8 @@ export interface SubscriptionStats {
   lastFailureAt: string | null
   lastError: string | null
   lastLatencyMs: number | null
+  /** Notifications waiting for their next delivery attempt */
+  retrying?: number
 }
 
 export interface SubscriptionInput {
@@ -490,3 +496,105 @@ export interface BrokerHealth {
 }
 
 export const getBrokerHealth = () => apiClient.get<BrokerHealth>(`${V1}/health`).then((r) => r.data)
+
+// ─── Sessions and access log ─────────────────────────────────────────────────
+
+export interface Session {
+  id: string
+  userId: string
+  username?: string | null
+  displayName?: string | null
+  ip: string | null
+  userAgent: string | null
+  createdAt: string
+  lastSeenAt: string
+  expiresAt: string
+  current?: boolean
+}
+
+export type AuthEventKind =
+  | 'login'
+  | 'login_failed'
+  | 'login_blocked'
+  | 'logout'
+  | 'refresh_reuse'
+  | 'session_revoked'
+  | 'user_sessions_revoked'
+
+export const AUTH_EVENT_KINDS: AuthEventKind[] = [
+  'login',
+  'login_failed',
+  'login_blocked',
+  'logout',
+  'refresh_reuse',
+  'session_revoked',
+  'user_sessions_revoked',
+]
+
+export interface AuthEvent {
+  id: number
+  at: string
+  kind: AuthEventKind
+  userId: string | null
+  username: string | null
+  sessionId: string | null
+  ip: string | null
+  userAgent: string | null
+  actor: string | null
+  detail: string | null
+}
+
+/** Ends the session on the server; the token is passed explicitly because the caller drops it right away. */
+export const logoutSession = (accessToken: string) =>
+  apiClient.post(`${V1}/auth/logout`, {}, { headers: { Authorization: `Bearer ${accessToken}` } })
+
+export const listMySessions = () =>
+  apiClient.get<{ sessions: Session[] }>(`${V1}/auth/sessions`).then((r) => r.data.sessions)
+
+export const revokeMySession = (id: string) => apiClient.delete(`${V1}/auth/sessions/${enc(id)}`)
+
+/** Superadmin: active sessions of every user (or of one) and the store that keeps them */
+export const listSessions = (userId?: string) =>
+  apiClient
+    .get<{ store: 'redis' | 'postgres'; sessions: Session[] }>(`${V1}/sessions`, { params: userId ? { userId } : {} })
+    .then((r) => r.data)
+
+export const revokeSession = (id: string) => apiClient.delete(`${V1}/sessions/${enc(id)}`)
+
+export const revokeUserSessions = (userId: string) =>
+  apiClient.delete<{ revoked: number }>(`${V1}/users/${enc(userId)}/sessions`).then((r) => r.data.revoked)
+
+export const listAuthEvents = (params: { userId?: string; kind?: AuthEventKind; from?: string; to?: string; limit?: number; offset?: number } = {}) =>
+  apiClient.get<{ total: number; events: AuthEvent[] }>(`${V1}/auth-events`, { params }).then((r) => r.data)
+
+// ─── Output transformers ─────────────────────────────────────────────────────
+
+export interface Transformer {
+  id: string
+  name: string
+  description: string | null
+  expression: string
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface TransformerPreview {
+  input: Record<string, unknown>
+  messages: { contentType: string; payload: string; entityId: string | null }[]
+}
+
+export const listTransformers = () =>
+  apiClient.get<{ transformers: Transformer[] }>(`${V1}/transformers`).then((r) => r.data.transformers)
+
+export const saveTransformer = (id: string, t: { name?: string; description?: string | null; expression: string }) =>
+  apiClient.put<Transformer>(`${V1}/transformers/${enc(id)}`, t).then((r) => r.data)
+
+export const deleteTransformer = (id: string) => apiClient.delete(`${V1}/transformers/${enc(id)}`)
+
+export const previewTransformer = (body: {
+  expression?: string
+  transformer?: string
+  entityIds?: string[]
+  types?: string[]
+  notify?: { attrs?: string[]; format?: 'full' | 'values'; perEntity?: boolean }
+}) => apiClient.post<TransformerPreview>(`${V1}/transformers/preview`, body).then((r) => r.data)

@@ -1,3 +1,4 @@
+import { MONO } from '../../theme'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
@@ -36,6 +37,7 @@ import SubscriptionWizard from './SubscriptionWizard'
 import { channelIcon } from './channelIcon'
 import { destination, selectorSummary, statusColor, statusOf } from './format'
 import { formatTime } from '../Entities/format'
+import PageHeader from '../../components/PageHeader'
 
 const REFRESH_MS = 5000
 
@@ -81,28 +83,24 @@ export default function Subscriptions() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-        <Box>
-          <Typography variant="h5" fontWeight={700}>
-            {t('subs.title')}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {t('subs.subtitle')}
-          </Typography>
-        </Box>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Tooltip title={t('common.refresh')}>
-            <IconButton onClick={load} size="small">
-              <RefreshIcon />
-            </IconButton>
-          </Tooltip>
-          {canWrite && (
-            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setWizardOpen(true)} size="small">
-              {t('subs.new')}
-            </Button>
-          )}
-        </Box>
-      </Box>
+      <PageHeader
+        title={t('subs.title')}
+        subtitle={t('subs.subtitle')}
+        actions={
+          <>
+            <Tooltip title={t('common.refresh')}>
+              <IconButton onClick={load}>
+                <RefreshIcon />
+              </IconButton>
+            </Tooltip>
+            {canWrite && (
+              <Button variant="contained" startIcon={<AddIcon />} onClick={() => setWizardOpen(true)}>
+                {t('subs.new')}
+              </Button>
+            )}
+          </>
+        }
+      />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
@@ -151,13 +149,13 @@ export default function Subscriptions() {
                         {s.name}
                       </Typography>
                       {s.filter && (
-                        <Typography variant="caption" color="text.secondary" fontFamily="monospace" sx={{ display: 'block', maxWidth: 320 }} noWrap>
+                        <Typography variant="caption" color="text.secondary" fontFamily={MONO} sx={{ display: 'block', maxWidth: 320 }} noWrap>
                           {s.filter}
                         </Typography>
                       )}
                     </TableCell>
                     <TableCell>
-                      <Typography variant="caption" fontFamily="monospace">
+                      <Typography variant="caption" fontFamily={MONO}>
                         {selectorSummary(s)}
                       </Typography>
                     </TableCell>

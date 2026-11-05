@@ -27,17 +27,17 @@ import {
   configureStorage,
 } from '../../api/endpoints'
 import type { StorageConfig, StorageHealth, StorageRuntimeInfo } from '../../api/types'
-
-const STORAGE_ICONS: Record<string, string> = {
-  memory: '🧠',
-  redis: '🔴',
-  timescaledb: '🐘',
-}
+import PageHeader from '../../components/PageHeader'
+import { CodeBlock, CodeTag } from '../../components/Code'
+import { MONO } from '../../theme'
+import { useAuth } from '../../context/AuthContext'
 
 export default function Storage() {
   const { t } = useTranslation()
 
   const navigate = useNavigate()
+  // Storage is global infrastructure: only a superadmin may test or change it
+  const canManage = !!useAuth().user?.isSuperadmin
   const [current, setCurrent] = useState<StorageConfig | null>(null)
   const [alternatives, setAlternatives] = useState<Record<string, StorageConfig>>({})
   const [runtime, setRuntime] = useState<StorageRuntimeInfo | null>(null)
@@ -164,18 +164,16 @@ export default function Storage() {
   if (loading) {
     return (
       <Box>
-        <Typography variant="h5" fontWeight={700} gutterBottom>{t('storage.title')}</Typography>
-        <Skeleton variant="rectangular" height={140} sx={{ borderRadius: 2, mb: 2 }} />
-        <Skeleton variant="rectangular" height={300} sx={{ borderRadius: 2 }} />
+        <PageHeader title={t('storage.title')} />
+        <Skeleton variant="rounded" height={140} sx={{ mb: 2 }} />
+        <Skeleton variant="rounded" height={300} />
       </Box>
     )
   }
 
   return (
     <Box>
-      <Typography variant="h5" fontWeight={700} gutterBottom>
-        {t('storage.title')}
-      </Typography>
+      <PageHeader title={t('storage.title')} />
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
@@ -198,16 +196,14 @@ export default function Storage() {
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
                 <StorageIcon color="primary" />
-                <Typography variant="subtitle1" fontWeight={600}>
+                <Typography variant="subtitle1">
                   {t('storage.currentConfig')}
                 </Typography>
               </Box>
               {current ? (
                 <Box>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, flexWrap: 'wrap' }}>
-                    <Typography variant="h6">
-                      {STORAGE_ICONS[current.type] ?? '💾'} {current.type}
-                    </Typography>
+                    <CodeTag>{current.type}</CodeTag>
                     {runtime && runtime.type !== current.type && (
                       <Chip size="small" color="warning" variant="outlined" label={t('storage.activeNow', { type: runtime.type })} />
                     )}
@@ -217,19 +213,7 @@ export default function Storage() {
                       </Button>
                     )}
                   </Box>
-                  <Box
-                    sx={{
-                      fontFamily: 'monospace',
-                      fontSize: '0.75rem',
-                      bgcolor: 'action.hover',
-                      borderRadius: 1,
-                      p: 1.5,
-                      maxHeight: 120,
-                      overflow: 'auto',
-                    }}
-                  >
-                    {JSON.stringify(current.config, null, 2)}
-                  </Box>
+                  <CodeBlock maxHeight={160}>{JSON.stringify(current.config, null, 2)}</CodeBlock>
                 </Box>
               ) : (
                 <Typography color="text.secondary">{t('common.noData')}</Typography>
@@ -247,7 +231,7 @@ export default function Storage() {
                 ) : (
                   <ErrorIcon color="error" />
                 )}
-                <Typography variant="subtitle1" fontWeight={600}>
+                <Typography variant="subtitle1">
                   {t('storage.health')}
                 </Typography>
                 <Chip
@@ -264,17 +248,7 @@ export default function Storage() {
                 />
               </Box>
               {health?.statistics && (
-                <Box
-                  sx={{
-                    fontFamily: 'monospace',
-                    fontSize: '0.75rem',
-                    bgcolor: 'action.hover',
-                    borderRadius: 1,
-                    p: 1.5,
-                  }}
-                >
-                  {JSON.stringify(health.statistics, null, 2)}
-                </Box>
+                <CodeBlock maxHeight={160}>{JSON.stringify(health.statistics, null, 2)}</CodeBlock>
               )}
             </CardContent>
           </Card>
@@ -282,9 +256,10 @@ export default function Storage() {
       </Grid>
 
       {/* Change storage config */}
+      {canManage && (
       <Card>
         <CardContent>
-          <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+          <Typography variant="subtitle1" gutterBottom>
             {t('storage.changeStorage')}
           </Typography>
           <Divider sx={{ mb: 2 }} />
@@ -301,18 +276,19 @@ export default function Storage() {
             ].map(({ key, title, desc }) => (
               <Grid item xs={12} sm={4} key={key}>
                 <Card
-                  variant="outlined"
                   sx={{
                     cursor: 'pointer',
+                    height: '100%',
                     borderColor: selectedType === key ? 'primary.main' : 'divider',
-                    borderWidth: selectedType === key ? 2 : 1,
-                    transition: 'all 0.15s',
+                    bgcolor: selectedType === key ? 'action.selected' : undefined,
+                    transition: 'border-color 0.15s, background-color 0.15s',
+                    '&:hover': { borderColor: 'primary.main' },
                   }}
                   onClick={() => handleTypeChange(key)}
                 >
                   <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-                    <Typography variant="subtitle2" fontWeight={600}>
-                      {STORAGE_ICONS[key]} {title}
+                    <Typography variant="subtitle2" color={selectedType === key ? 'primary' : undefined}>
+                      {title}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
                       {desc}
@@ -336,11 +312,11 @@ export default function Storage() {
             }}
             error={!!jsonError}
             helperText={jsonError}
-            InputProps={{ sx: { fontFamily: 'monospace', fontSize: '0.8rem' } }}
+            InputProps={{ sx: { fontFamily: MONO, fontSize: '0.8rem' } }}
             sx={{ mb: 2 }}
           />
 
-          <Box sx={{ display: 'flex', gap: 1 }}>
+          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
             <Button
               variant="outlined"
               onClick={handleTest}
@@ -360,6 +336,7 @@ export default function Storage() {
           </Box>
         </CardContent>
       </Card>
+      )}
 
       <Snackbar
         open={snack.open}

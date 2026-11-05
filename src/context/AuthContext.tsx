@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import { session } from '../api/session'
-import { getMe, login as apiLogin, type Me, type Role } from '../api/broker'
+import { getMe, login as apiLogin, logoutSession, type Me, type Role } from '../api/broker'
 
 interface AuthContextType {
   /** null while unauthenticated; undefined while the stored session is being checked */
@@ -56,6 +56,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const logout = () => {
+    // Ends the session on the server too (best effort: the tokens are dropped anyway)
+    const tokens = session.getTokens()
+    if (tokens) logoutSession(tokens.accessToken).catch(() => {})
     session.setTokens(null)
     setUser(null)
   }

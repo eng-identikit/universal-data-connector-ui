@@ -1,3 +1,4 @@
+import { MONO } from '../../theme'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -131,7 +132,7 @@ export default function ClusterTab() {
         <TableBody>
           {status.instances.map((i) => (
             <TableRow key={i.id} sx={{ opacity: i.alive ? 1 : 0.5 }}>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
+              <TableCell sx={{ fontFamily: MONO, fontSize: '0.75rem' }}>
                 {i.id}
                 {i.id === status.self && <Chip size="small" label={t('cluster.this')} sx={{ ml: 1, height: 18 }} />}
               </TableCell>

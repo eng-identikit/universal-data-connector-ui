@@ -24,6 +24,7 @@ import InfoIcon from '@mui/icons-material/Info'
 import { useAppContext } from '../../context/AppContext'
 import { getWsUrl } from '../../api/client'
 import { getTileUrl } from '../../components/EntityMap'
+import PageHeader from '../../components/PageHeader'
 
 export default function Settings() {
   const { t } = useTranslation()
@@ -58,9 +59,7 @@ export default function Settings() {
 
   return (
     <Box>
-      <Typography variant="h5" fontWeight={700} gutterBottom>
-        {t('settings.title')}
-      </Typography>
+      <PageHeader title={t('settings.title')} />
 
       <Grid container spacing={3}>
         {/* Appearance */}

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Button,
@@ -19,8 +19,10 @@ import {
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import LogoutIcon from '@mui/icons-material/Logout'
 import KeyIcon from '@mui/icons-material/Key'
+import DevicesIcon from '@mui/icons-material/Devices'
 import { useAuth } from '../../context/AuthContext'
-import { changePassword } from '../../api/broker'
+import { changePassword, listMySessions, revokeMySession, type Session } from '../../api/broker'
+import SessionsTable from '../SessionsTable'
 import { session } from '../../api/session'
 
 function ChangePasswordDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -88,11 +90,64 @@ function ChangePasswordDialog({ open, onClose }: { open: boolean; onClose: () =>
   )
 }
 
+function MySessionsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { t } = useTranslation()
+  const { logout } = useAuth()
+  const [sessions, setSessions] = useState<Session[]>([])
+  const [error, setError] = useState<string | null>(null)
+
+  const load = useCallback(async () => {
+    try {
+      setError(null)
+      setSessions(await listMySessions())
+    } catch (err) {
+      setError((err as Error).message)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (open) load()
+  }, [open, load])
+
+  const revoke = async (s: Session) => {
+    if (s.current) return logout()
+    try {
+      await revokeMySession(s.id)
+      await load()
+    } catch (err) {
+      setError((err as Error).message)
+    }
+  }
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+      <DialogTitle>{t('sessions.mine')}</DialogTitle>
+      <DialogContent>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          {t('sessions.mineHelp')}
+        </Typography>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+        <SessionsTable sessions={sessions} onRevoke={revoke} />
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose} color="inherit">
+          {t('common.close')}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  )
+}
+
 export default function UserMenu() {
   const { t } = useTranslation()
   const { user, role, logout } = useAuth()
   const [anchor, setAnchor] = useState<HTMLElement | null>(null)
   const [passwordOpen, setPasswordOpen] = useState(false)
+  const [sessionsOpen, setSessionsOpen] = useState(false)
 
   if (!user) return null
 
@@ -128,6 +183,17 @@ export default function UserMenu() {
           </ListItemIcon>
           <ListItemText>{t('userMenu.changePassword')}</ListItemText>
         </MenuItem>
+        <MenuItem
+          onClick={() => {
+            setAnchor(null)
+            setSessionsOpen(true)
+          }}
+        >
+          <ListItemIcon>
+            <DevicesIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>{t('sessions.mine')}</ListItemText>
+        </MenuItem>
         <MenuItem onClick={logout}>
           <ListItemIcon>
             <LogoutIcon fontSize="small" />
@@ -136,6 +202,7 @@ export default function UserMenu() {
         </MenuItem>
       </Menu>
       <ChangePasswordDialog open={passwordOpen} onClose={() => setPasswordOpen(false)} />
+      <MySessionsDialog open={sessionsOpen} onClose={() => setSessionsOpen(false)} />
     </>
   )
 }

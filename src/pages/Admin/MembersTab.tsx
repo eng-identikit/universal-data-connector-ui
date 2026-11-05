@@ -18,9 +18,11 @@ import DeleteIcon from '@mui/icons-material/Delete'
 import PersonAddIcon from '@mui/icons-material/PersonAdd'
 import { listMembers, addMember, setMemberRole, removeMember, ROLES, type Member, type Role } from '../../api/broker'
 import ConfirmDialog from '../../components/ConfirmDialog'
+import { useAuth } from '../../context/AuthContext'
 
 export default function MembersTab({ tenant }: { tenant: string }) {
   const { t } = useTranslation()
+  const { user: me, reload } = useAuth()
   const [members, setMembers] = useState<Member[]>([])
   const [error, setError] = useState<string | null>(null)
   const [username, setUsername] = useState('')
@@ -39,11 +41,13 @@ export default function MembersTab({ tenant }: { tenant: string }) {
     load()
   }, [load])
 
-  const run = async (fn: () => Promise<unknown>) => {
+  /** targetUserId: when it is the signed-in user, their roles changed and the session profile is reloaded */
+  const run = async (fn: () => Promise<unknown>, targetUserId?: string) => {
     try {
       setError(null)
       await fn()
       await load()
+      if (targetUserId && targetUserId === me?.id) await reload()
     } catch (err) {
       setError((err as Error).message)
     }
@@ -114,9 +118,9 @@ export default function MembersTab({ tenant }: { tenant: string }) {
                 <TextField
                   select
                   size="small"
-                  variant="standard"
                   value={m.role}
-                  onChange={(e) => run(() => setMemberRole(tenant, m.userId, e.target.value as Role))}
+                  sx={{ minWidth: 140 }}
+                  onChange={(e) => run(() => setMemberRole(tenant, m.userId, e.target.value as Role), m.userId)}
                 >
                   {ROLES.map((r) => (
                     <MenuItem key={r} value={r}>
@@ -143,7 +147,7 @@ export default function MembersTab({ tenant }: { tenant: string }) {
         onConfirm={() => {
           const m = removing
           setRemoving(null)
-          if (m) run(() => removeMember(tenant, m.userId))
+          if (m) run(() => removeMember(tenant, m.userId), m.userId)
         }}
       />
     </Box>

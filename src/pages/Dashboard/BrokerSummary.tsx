@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { Grid, Card, CardActionArea, CardContent, Typography, Box, Avatar, useTheme } from '@mui/material'
+import { Grid, useTheme } from '@mui/material'
 import CategoryIcon from '@mui/icons-material/Category'
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive'
 import SendIcon from '@mui/icons-material/Send'
 import ReportProblemIcon from '@mui/icons-material/ReportProblem'
 import { getTypes, listSubscriptions } from '../../api/broker'
 import { statusOf } from '../Subscriptions/format'
+import StatCard from '../../components/StatCard'
 
 const REFRESH_MS = 10000
 
@@ -64,26 +65,14 @@ export default function BrokerSummary() {
     <Grid container spacing={2} sx={{ mb: 3 }}>
       {cards.map((c) => (
         <Grid item xs={12} sm={6} md={3} key={c.label}>
-          <Card>
-            <CardActionArea onClick={() => navigate(c.to)}>
-              <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2.5 }}>
-                <Avatar sx={{ bgcolor: c.color + '22', color: c.color, width: 48, height: 48 }}>{c.icon}</Avatar>
-                <Box>
-                  <Typography variant="caption" color="text.secondary">
-                    {c.label}
-                  </Typography>
-                  <Typography variant="h6" fontWeight={700}>
-                    {c.value === undefined ? '—' : c.value.toLocaleString()}
-                  </Typography>
-                  {c.sub && (
-                    <Typography variant="caption" color="text.secondary">
-                      {c.sub}
-                    </Typography>
-                  )}
-                </Box>
-              </CardContent>
-            </CardActionArea>
-          </Card>
+          <StatCard
+            label={c.label}
+            value={c.value === undefined ? '—' : c.value.toLocaleString()}
+            sub={c.sub}
+            icon={c.icon}
+            color={c.color}
+            onClick={() => navigate(c.to)}
+          />
         </Grid>
       ))}
     </Grid>

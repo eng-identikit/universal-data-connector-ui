@@ -1,3 +1,4 @@
+import { MONO } from '../../theme'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -135,7 +136,7 @@ export default function FilterEditor({ value, onChange, knownAttrs }: Props) {
         multiline
         minRows={2}
         placeholder="temperature > 80 && status == 'RUN'"
-        InputProps={{ sx: { fontFamily: 'monospace', fontSize: '0.85rem' } }}
+        InputProps={{ sx: { fontFamily: MONO, fontSize: '0.85rem' } }}
         error={check?.valid === false}
         helperText={check?.valid === false ? check.error : t('subs.expressionHelp')}
       />
@@ -153,7 +154,7 @@ export default function FilterEditor({ value, onChange, knownAttrs }: Props) {
         {t('subs.syntax')}
       </Button>
       <Collapse in={help}>
-        <Alert severity="info" icon={false} sx={{ fontSize: '0.8rem', '& code': { fontFamily: 'monospace' } }}>
+        <Alert severity="info" icon={false} sx={{ fontSize: '0.8rem', '& code': { fontFamily: MONO } }}>
           <div>
             <code>temperature</code> {t('subs.helpValue')} · <code>temperature.quality</code>, <code>.unit</code>, <code>.ts</code>,{' '}
             <code>.source</code>, <code>.meta.key</code>

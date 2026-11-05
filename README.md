@@ -25,12 +25,14 @@ Built with **React 18 + TypeScript**, **Vite**, **Material UI (MUI v5)**, **Rech
   - the raw JSON.
 - **Subscriptions**:
   - list with status and statistics;
-  - 4-step wizard (entities with preview, trigger with deadband/throttle/periodic, filter with a visual builder and server-side validation, channel);
+  - 4-step wizard (entities with preview, trigger with deadband/throttle/periodic, filter with a visual builder and server-side validation, channel and output format);
   - detail with test, pause/resume, DLQ with replay and purge, and live notifications for websocket subscriptions.
+- **Transformers**: library of output formats (JSONata expressions in `config/transformers.json`) with an editor and a preview on real entities; in the wizard a subscription picks one from the library or gets its own.
 - **History**: attribute history of any entity.
 - **Live Data**: realtime charts and values from the authenticated broker stream.
 - **Connectors / Mapping / Storage**: connector configuration (including target tenant and entity id prefix), mapped devices and the raw data buffer.
-- **Administration**: tenant members, API keys (shown once), tenants and users (superadmin), **cluster** (instances, partitions, connectors, event-loop delay, queue backlogs).
+- **Administration**: tenant members, API keys (shown once), tenants and users (superadmin), **active sessions** (who is logged in, from where and with which client; revoke one session or all of a user's), **access log** (successful, failed and blocked logins, logouts, revocations) and **cluster** (instances, partitions, connectors, event-loop delay, queue backlogs).
+- **My sessions**: from the user menu everyone sees their own logins and ends the ones they do not recognise.
 - **Settings**: API URL, map tile server, language (IT/EN) and theme.
 
 ## 📋 Requirements

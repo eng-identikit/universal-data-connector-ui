@@ -1,3 +1,4 @@
+import { MONO } from '../../theme'
 import { useAuth } from '../../context/AuthContext'
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -170,7 +171,8 @@ export default function ConnectorDialog({ open, source, onClose, onSaved }: Conn
         type,
         enabled,
         tenant,
-        ...(entityIdPrefix.trim() && { entityIdPrefix: entityIdPrefix.trim() }),
+        // Always sent, so clearing the field removes a previous prefix
+        entityIdPrefix: entityIdPrefix.trim(),
         config,
         tags: tagsInput
           .split(',')
@@ -295,7 +297,7 @@ export default function ConnectorDialog({ open, source, onClose, onSaved }: Conn
               }}
               error={!!jsonError}
               helperText={jsonError}
-              InputProps={{ sx: { fontFamily: 'monospace', fontSize: '0.8rem' } }}
+              InputProps={{ sx: { fontFamily: MONO, fontSize: '0.8rem' } }}
             />
           </Grid>
 

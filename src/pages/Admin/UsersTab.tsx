@@ -19,16 +19,19 @@ import {
   DialogActions,
   FormControlLabel,
   Switch,
+  Tooltip,
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
+import LogoutIcon from '@mui/icons-material/Logout'
 import {
   listUsers,
   createUser,
   updateUser,
   deleteUser,
   listTenants,
+  revokeUserSessions,
   ROLES,
   type User,
   type Role,
@@ -51,13 +54,15 @@ const EMPTY: FormState = { username: '', displayName: '', password: '', isSupera
 
 export default function UsersTab() {
   const { t } = useTranslation()
-  const { user: me } = useAuth()
+  const { user: me, reload, logout } = useAuth()
   const [users, setUsers] = useState<User[]>([])
   const [tenants, setTenants] = useState<Tenant[]>([])
   const [error, setError] = useState<string | null>(null)
   const [editing, setEditing] = useState<{ user?: User } | null>(null)
   const [form, setForm] = useState<FormState>(EMPTY)
   const [deleting, setDeleting] = useState<User | null>(null)
+  const [signingOut, setSigningOut] = useState<User | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     try {
@@ -103,8 +108,24 @@ export default function UsersTab() {
           tenants: form.tenant ? [{ tenant: form.tenant, role: form.role }] : [],
         })
       }
+      const self = editing?.user?.id === me?.id
       setEditing(null)
       await load()
+      // Editing oneself (e.g. the superadmin flag) changes the session profile
+      if (self) await reload()
+    } catch (err) {
+      setError((err as Error).message)
+    }
+  }
+
+  const signOut = async () => {
+    const u = signingOut
+    setSigningOut(null)
+    if (!u) return
+    try {
+      const revoked = await revokeUserSessions(u.id)
+      if (u.id === me?.id) return logout()
+      setNotice(t('sessions.revokedCount', { count: revoked, user: u.username }))
     } catch (err) {
       setError((err as Error).message)
     }
@@ -118,6 +139,11 @@ export default function UsersTab() {
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
           {error}
+        </Alert>
+      )}
+      {notice && (
+        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setNotice(null)}>
+          {notice}
         </Alert>
       )}
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
@@ -155,6 +181,11 @@ export default function UsersTab() {
                 <IconButton size="small" onClick={() => open(u)}>
                   <EditIcon fontSize="small" />
                 </IconButton>
+                <Tooltip title={t('sessions.signOutEverywhere')}>
+                  <IconButton size="small" onClick={() => setSigningOut(u)}>
+                    <LogoutIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
                 <IconButton size="small" disabled={u.id === me?.id} onClick={() => setDeleting(u)}>
                   <DeleteIcon fontSize="small" />
                 </IconButton>
@@ -263,6 +294,14 @@ export default function UsersTab() {
             setError((err as Error).message)
           }
         }}
+      />
+      <ConfirmDialog
+        open={!!signingOut}
+        title={t('sessions.signOutEverywhere')}
+        message={t('sessions.revokeAllMessage', { user: signingOut?.username ?? '' })}
+        confirmLabel={t('sessions.revokeAll')}
+        onCancel={() => setSigningOut(null)}
+        onConfirm={signOut}
       />
     </Box>
   )

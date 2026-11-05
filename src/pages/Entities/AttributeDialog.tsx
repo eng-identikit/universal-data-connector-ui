@@ -1,3 +1,4 @@
+import { MONO } from '../../theme'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -227,7 +228,7 @@ export default function AttributeDialog({ open, name, attr, existingNames, onCan
             size="small"
             multiline
             minRows={3}
-            InputProps={{ sx: { fontFamily: 'monospace', fontSize: '0.8rem' } }}
+            InputProps={{ sx: { fontFamily: MONO, fontSize: '0.8rem' } }}
           />
         )
       case 'datetime':
@@ -379,7 +380,7 @@ export default function AttributeDialog({ open, name, attr, existingNames, onCan
                   fullWidth
                   size="small"
                   helperText={t('commands.argsHelp')}
-                  InputProps={{ sx: { fontFamily: 'monospace', fontSize: '0.8rem' } }}
+                  InputProps={{ sx: { fontFamily: MONO, fontSize: '0.8rem' } }}
                 />
               </Grid>
             </>
@@ -394,7 +395,7 @@ export default function AttributeDialog({ open, name, attr, existingNames, onCan
               multiline
               minRows={2}
               placeholder='{ "sensorModel": "PT100" }'
-              InputProps={{ sx: { fontFamily: 'monospace', fontSize: '0.8rem' } }}
+              InputProps={{ sx: { fontFamily: MONO, fontSize: '0.8rem' } }}
             />
           </Grid>
         </Grid>

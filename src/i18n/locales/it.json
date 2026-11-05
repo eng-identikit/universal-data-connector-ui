@@ -27,7 +27,11 @@
     "stop": "Ferma",
     "restart": "Riavvia",
     "noData": "Nessun dato disponibile",
-    "updatedAt": "Aggiornato alle"
+    "updatedAt": "Aggiornato alle",
+    "collapse": "Comprimi",
+    "expand": "Espandi",
+    "retry": "Riprova",
+    "pageError": "Si è verificato un errore in questa pagina"
   },
   "connectorStatus": {
     "connected": "Connesso",
@@ -49,7 +53,8 @@
     "history": "Storico",
     "entities": "Entità",
     "admin": "Amministrazione",
-    "subscriptions": "Subscription"
+    "subscriptions": "Subscription",
+    "transformers": "Transformer"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -380,7 +385,9 @@
       "apikeys": "API key",
       "tenants": "Tenant",
       "users": "Utenti",
-      "cluster": "Cluster"
+      "cluster": "Cluster",
+      "sessions": "Sessioni",
+      "accessLog": "Storico accessi"
     },
     "tenant": "Tenant",
     "role": "Ruolo",
@@ -536,7 +543,16 @@
     "deleteMessage": "Eliminare la subscription {{name}}? Le notifiche in coda e la DLQ vengono scartate.",
     "pickOnMap": "Scegli sulla mappa",
     "pickOnMapHelp": "Sposta e ingrandisci la mappa: l'area visibile diventa il riquadro della subscription.",
-    "useVisibleArea": "Usa l'area visibile"
+    "useVisibleArea": "Usa l'area visibile",
+    "output": "Formato in uscita",
+    "outputNone": "Standard",
+    "outputLibrary": "Dalla libreria",
+    "outputCustom": "Personalizzato",
+    "outputNoneHelp": "La notifica del broker così com'è (JSON).",
+    "outputHelp": "Un transformer JSONata decide il messaggio inviato al destinatario.",
+    "transformer": "Transformer",
+    "transformerMissing": "Il transformer {{id}} non esiste più nella libreria",
+    "retrying": "In attesa di retry"
   },
   "commands": {
     "title": "Comandi",
@@ -588,5 +604,74 @@
     "ingested": "Update applicati (questa istanza)",
     "rejected": "{{n}} rifiutati",
     "lastIngestError": "Ultimo errore di ingest"
+  },
+  "sessions": {
+    "none": "Nessuna sessione attiva",
+    "user": "Utente",
+    "allUsers": "Tutti gli utenti",
+    "client": "Client",
+    "address": "Indirizzo",
+    "started": "Inizio",
+    "lastActivity": "Ultima attività",
+    "expires": "Scade",
+    "thisSession": "Questa sessione",
+    "revoke": "Revoca",
+    "logoutHere": "Esci",
+    "revokeAll": "Revoca tutte",
+    "revokeTitle": "Revocare la sessione?",
+    "revokeMessage": "La sessione di {{user}} da {{ip}} verrà chiusa subito: dovrà accedere di nuovo.",
+    "revokeOwnMessage": "È la sessione che stai usando: verrai disconnesso.",
+    "revokeAllMessage": "Tutte le sessioni di {{user}} verranno chiuse subito, su ogni dispositivo.",
+    "revokedCount": "{{count}} sessioni di {{user}} chiuse",
+    "signOutEverywhere": "Disconnetti ovunque",
+    "summary": "{{sessions}} sessioni attive · {{users}} utenti collegati",
+    "storeHelp": "Dove sono conservate le sessioni: Redis se configurato, altrimenti PostgreSQL",
+    "mine": "Le mie sessioni",
+    "mineHelp": "Dispositivi e browser da cui hai effettuato l'accesso. Revoca quelli che non riconosci."
+  },
+  "accessLog": {
+    "event": "Evento",
+    "allEvents": "Tutti gli eventi",
+    "from": "Dal",
+    "to": "Al",
+    "time": "Data e ora",
+    "details": "Dettagli",
+    "by": "da {{actor}}",
+    "none": "Nessun evento",
+    "rowsPerPage": "Righe per pagina",
+    "kind": {
+      "login": "Accesso",
+      "login_failed": "Accesso fallito",
+      "login_blocked": "Accesso bloccato",
+      "logout": "Uscita",
+      "refresh_reuse": "Token riusato",
+      "session_revoked": "Sessione revocata",
+      "user_sessions_revoked": "Sessioni utente revocate"
+    }
+  },
+  "transformers": {
+    "title": "Transformer",
+    "subtitle": "Formati di uscita per le subscription: espressioni JSONata che trasformano la notifica nel messaggio che il destinatario si aspetta. Sono salvati in config/transformers.json.",
+    "jsonataDocs": "Guida a JSONata",
+    "new": "Nuovo transformer",
+    "none": "Nessun transformer nella libreria",
+    "name": "Nome",
+    "description": "Descrizione",
+    "expression": "Espressione JSONata",
+    "expressionHelp": "Input: la notifica { reason, timestamp, subscriptionName, entities[] } più entity (la prima entità). Un oggetto o un array viene inviato come JSON, una stringa come testo; nessun risultato salta il messaggio.",
+    "idHelp": "Minuscole, cifre, _ e -. Non modificabile.",
+    "view": "Visualizza",
+    "delete": "Eliminare il transformer?",
+    "deleteMessage": "Il transformer {{name}} verrà rimosso dalla libreria.",
+    "preview": "Anteprima",
+    "hidePreview": "Nascondi anteprima",
+    "previewTypes": "Tipi di entità",
+    "previewEntities": "Entità",
+    "previewEntitiesHelp": "Vuoto = la prima entità dei tipi scelti",
+    "perEntity": "Un messaggio per entità",
+    "run": "Prova",
+    "noOutput": "Nessun risultato: il messaggio non verrebbe inviato.",
+    "showInput": "Mostra input",
+    "hideInput": "Nascondi input"
   }
 }

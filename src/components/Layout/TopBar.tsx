@@ -1,14 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import {
-  Box,
-  IconButton,
-  Tooltip,
-  Typography,
-  Chip,
-  TextField,
-  MenuItem,
-  useTheme,
-} from '@mui/material'
+import { Box, IconButton, Tooltip, Typography, Chip, TextField, MenuItem, ToggleButton, ToggleButtonGroup } from '@mui/material'
 import LightModeIcon from '@mui/icons-material/LightMode'
 import DarkModeIcon from '@mui/icons-material/DarkMode'
 import CircleIcon from '@mui/icons-material/Circle'
@@ -22,7 +13,6 @@ export default function TopBar() {
   const { themeMode, toggleTheme, language, setLanguage } = useAppContext()
   const { status, error } = useUDCStatus()
   const { user, tenant, setTenant } = useAuth()
-  const theme = useTheme()
 
   const isOnline = !!status && !error
   const isRunning = status?.system?.status === 'running'
@@ -31,7 +21,7 @@ export default function TopBar() {
     <Box
       sx={{
         height: '100%',
-        px: 2.5,
+        px: 3,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -40,14 +30,7 @@ export default function TopBar() {
       {/* Left: Server status */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
         <Chip
-          icon={
-            <CircleIcon
-              sx={{
-                fontSize: '10px !important',
-                color: (isOnline && isRunning ? theme.palette.success : theme.palette.error).main,
-              }}
-            />
-          }
+          icon={<CircleIcon sx={{ fontSize: '8px !important', color: 'inherit !important' }} />}
           label={
             !isOnline
               ? t('dashboard.offline')
@@ -56,13 +39,8 @@ export default function TopBar() {
                 : t('connectorStatus.stopped')
           }
           size="small"
-          variant="outlined"
-          sx={{
-            borderColor: (isOnline && isRunning ? theme.palette.success : theme.palette.error)
-              .main,
-            color: (isOnline && isRunning ? theme.palette.success : theme.palette.error).main,
-            fontWeight: 600,
-          }}
+          color={isOnline && isRunning ? 'success' : 'error'}
+          sx={{ fontWeight: 600, '& .MuiChip-icon': { ml: 0.75 } }}
         />
         {status && (
           <Typography variant="caption" color="text.secondary">
@@ -78,11 +56,10 @@ export default function TopBar() {
         {user && user.tenants.length > 0 && (
           <TextField
             select
-            size="small"
             label={t('admin.tenant')}
             value={tenant ?? ''}
             onChange={(e) => setTenant(e.target.value)}
-            sx={{ minWidth: 160 }}
+            sx={{ minWidth: 180 }}
           >
             {user.tenants.map((m) => (
               <MenuItem key={m.tenant} value={m.tenant}>
@@ -93,31 +70,17 @@ export default function TopBar() {
         )}
 
         {/* Language switcher */}
-        <Box sx={{ display: 'flex', border: `1px solid ${theme.palette.divider}`, borderRadius: 2, overflow: 'hidden' }}>
+        <ToggleButtonGroup size="small" exclusive value={language} onChange={(_, v) => v && setLanguage(v)}>
           {(['it', 'en'] as const).map((lang) => (
-            <Box
-              key={lang}
-              onClick={() => setLanguage(lang)}
-              sx={{
-                px: 1.5,
-                py: 0.5,
-                cursor: 'pointer',
-                fontSize: '0.75rem',
-                fontWeight: language === lang ? 700 : 400,
-                backgroundColor:
-                  language === lang ? theme.palette.primary.main + '30' : 'transparent',
-                color: language === lang ? theme.palette.primary.main : theme.palette.text.secondary,
-                userSelect: 'none',
-              }}
-            >
+            <ToggleButton key={lang} value={lang} sx={{ px: 1.25, fontSize: '0.75rem' }}>
               {lang.toUpperCase()}
-            </Box>
+            </ToggleButton>
           ))}
-        </Box>
+        </ToggleButtonGroup>
 
         {/* Theme toggle */}
         <Tooltip title={themeMode === 'dark' ? t('settings.lightMode') : t('settings.darkMode')}>
-          <IconButton onClick={toggleTheme} size="small">
+          <IconButton onClick={toggleTheme}>
             {themeMode === 'dark' ? <LightModeIcon fontSize="small" /> : <DarkModeIcon fontSize="small" />}
           </IconButton>
         </Tooltip>

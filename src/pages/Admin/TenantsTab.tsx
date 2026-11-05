@@ -1,3 +1,4 @@
+import { MONO } from '../../theme'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -101,7 +102,7 @@ export default function TenantsTab() {
         <TableBody>
           {tenants.map((x) => (
             <TableRow key={x.id} hover>
-              <TableCell sx={{ fontFamily: 'monospace' }}>{x.id}</TableCell>
+              <TableCell sx={{ fontFamily: MONO }}>{x.id}</TableCell>
               <TableCell>{x.name}</TableCell>
               <TableCell>{x.description ?? '—'}</TableCell>
               <TableCell align="right">{x.entityCount ?? '—'}</TableCell>

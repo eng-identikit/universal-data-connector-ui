@@ -1,3 +1,4 @@
+import { MONO } from '../../theme'
 import { useTranslation } from 'react-i18next'
 import {
   Box,
@@ -13,9 +14,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
   useTheme,
-  Avatar,
   LinearProgress,
 } from '@mui/material'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
@@ -25,11 +24,16 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime'
 import DataUsageIcon from '@mui/icons-material/DataUsage'
 import DeviceHubIcon from '@mui/icons-material/DeviceHub'
 import StatusChip from '../../components/StatusChip'
+import PageHeader from '../../components/PageHeader'
+import StatCard from '../../components/StatCard'
+import { CodeTag } from '../../components/Code'
 import { useUDCStatus } from '../../hooks/useUDCStatus'
 import BrokerSummary from './BrokerSummary'
 
-function formatUptime(seconds: number): string {
-  if (!seconds) return '—'
+function formatUptime(ms: number): string {
+  if (!ms) return '—'
+  // The engine reports uptime in milliseconds
+  const seconds = Math.floor(ms / 1000)
   const d = Math.floor(seconds / 86400)
   const h = Math.floor((seconds % 86400) / 3600)
   const m = Math.floor((seconds % 3600) / 60)
@@ -40,42 +44,6 @@ function formatUptime(seconds: number): string {
   return parts.join(' ')
 }
 
-function StatCard({
-  title,
-  value,
-  icon,
-  color,
-  subtitle,
-}: {
-  title: string
-  value: string | number
-  icon: React.ReactNode
-  color: string
-  subtitle?: string
-}) {
-  const theme = useTheme()
-  return (
-    <Card>
-      <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2.5 }}>
-        <Avatar sx={{ bgcolor: color + '22', color, width: 48, height: 48 }}>{icon}</Avatar>
-        <Box>
-          <Typography variant="h5" fontWeight={700}>
-            {value}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {title}
-          </Typography>
-          {subtitle && (
-            <Typography variant="caption" color="text.disabled">
-              {subtitle}
-            </Typography>
-          )}
-        </Box>
-      </CardContent>
-    </Card>
-  )
-}
-
 export default function Dashboard() {
   const { t } = useTranslation()
   const { status, loading, error } = useUDCStatus(5000)
@@ -84,13 +52,11 @@ export default function Dashboard() {
   if (loading && !status) {
     return (
       <Box>
-        <Typography variant="h5" gutterBottom fontWeight={700}>
-          {t('dashboard.title')}
-        </Typography>
+        <PageHeader title={t('dashboard.title')} />
         <Grid container spacing={2}>
           {[...Array(4)].map((_, i) => (
             <Grid item xs={12} sm={6} md={3} key={i}>
-              <Skeleton variant="rectangular" height={100} sx={{ borderRadius: 2 }} />
+              <Skeleton variant="rounded" height={92} />
             </Grid>
           ))}
         </Grid>
@@ -105,9 +71,7 @@ export default function Dashboard() {
 
   return (
     <Box>
-      <Typography variant="h5" gutterBottom fontWeight={700}>
-        {t('dashboard.title')}
-      </Typography>
+      <PageHeader title={t('dashboard.title')} />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
@@ -122,16 +86,16 @@ export default function Dashboard() {
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
-            title={t('dashboard.serverStatus')}
+            label={t('dashboard.serverStatus')}
             value={isOnline ? t('dashboard.online') : t('dashboard.offline')}
             icon={isOnline ? <CheckCircleIcon /> : <ErrorIcon />}
             color={isOnline ? theme.palette.success.main : theme.palette.error.main}
-            subtitle={status?.system?.nodeVersion ?? undefined}
+            sub={status?.system?.nodeVersion ?? undefined}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
-            title={t('dashboard.uptime')}
+            label={t('dashboard.uptime')}
             value={formatUptime(status?.system?.uptime ?? 0)}
             icon={<AccessTimeIcon />}
             color={theme.palette.info.main}
@@ -139,11 +103,11 @@ export default function Dashboard() {
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
-            title={t('dashboard.totalDataPoints')}
+            label={t('dashboard.totalDataPoints')}
             value={(status?.engine?.totalDataPoints ?? 0).toLocaleString()}
             icon={<DataUsageIcon />}
             color={theme.palette.primary.main}
-            subtitle={
+            sub={
               status?.engine?.lastDataReceived
                 ? new Date(status.engine.lastDataReceived).toLocaleTimeString()
                 : undefined
@@ -152,7 +116,7 @@ export default function Dashboard() {
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
-            title={t('dashboard.activeConnectors')}
+            label={t('dashboard.activeConnectors')}
             value={`${status?.connectors?.filter((c) => c.runtime?.status === 'connected').length ?? 0} / ${status?.connectors?.length ?? 0}`}
             icon={<DeviceHubIcon />}
             color={theme.palette.secondary.main}
@@ -166,7 +130,7 @@ export default function Dashboard() {
           <CardContent>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
               <MemoryIcon fontSize="small" color="action" />
-              <Typography variant="subtitle2" fontWeight={600}>
+              <Typography variant="subtitle1">
                 {t('dashboard.memoryUsage')}
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ ml: 'auto' }}>
@@ -177,7 +141,7 @@ export default function Dashboard() {
               variant="determinate"
               value={memPct}
               color={memPct > 80 ? 'error' : memPct > 60 ? 'warning' : 'primary'}
-              sx={{ height: 8, borderRadius: 4 }}
+              sx={{ height: 8 }}
             />
             <Typography variant="caption" color="text.secondary">
               RSS: {status.memory.rss} MB &nbsp;·&nbsp; External: {status.memory.external} MB
@@ -189,7 +153,7 @@ export default function Dashboard() {
       {/* Connector overview */}
       <Card>
         <CardContent>
-          <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+          <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
             {t('dashboard.connectorOverview')}
           </Typography>
           {!status?.connectors?.length ? (
@@ -197,7 +161,7 @@ export default function Dashboard() {
               {t('dashboard.noConnectors')}
             </Typography>
           ) : (
-            <TableContainer component={Paper} elevation={0} variant="outlined">
+            <TableContainer sx={{ border: 1, borderColor: 'divider' }}>
               <Table size="small">
                 <TableHead>
                   <TableRow>
@@ -218,18 +182,7 @@ export default function Dashboard() {
                         </Typography>
                       </TableCell>
                       <TableCell>
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            px: 1,
-                            py: 0.25,
-                            borderRadius: 1,
-                            bgcolor: theme.palette.action.selected,
-                            fontFamily: 'monospace',
-                          }}
-                        >
-                          {c.type}
-                        </Typography>
+                        <CodeTag>{c.type}</CodeTag>
                       </TableCell>
                       <TableCell>
                         <StatusChip status={c.runtime?.status ?? 'unknown'} />
@@ -265,7 +218,7 @@ export default function Dashboard() {
       {status?.system && (
         <Card sx={{ mt: 2 }}>
           <CardContent>
-            <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+            <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
               {t('dashboard.systemInfo')}
             </Typography>
             <Grid container spacing={1}>
@@ -279,7 +232,7 @@ export default function Dashboard() {
                     <Typography variant="caption" color="text.secondary">
                       {label}
                     </Typography>
-                    <Typography variant="body2" fontFamily="monospace">
+                    <Typography variant="body2" fontFamily={MONO}>
                       {value}
                     </Typography>
                   </Box>

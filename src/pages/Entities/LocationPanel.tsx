@@ -1,3 +1,4 @@
+import { MONO } from '../../theme'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Box, Button, Typography, Alert, ToggleButton } from '@mui/material'
@@ -26,7 +27,7 @@ export default function LocationPanel({ entity, canWrite, onSave }: Props) {
   return (
     <Box>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, flexWrap: 'wrap' }}>
-        <Typography variant="body2" fontFamily="monospace" sx={{ flexGrow: 1 }}>
+        <Typography variant="body2" fontFamily={MONO} sx={{ flexGrow: 1 }}>
           {entity.location ? `${entity.location.type} ${JSON.stringify(entity.location.coordinates)}` : t('location.none')}
         </Typography>
         {canWrite && (

@@ -1,3 +1,4 @@
+import { MONO } from '../../theme'
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router-dom'
@@ -35,6 +36,7 @@ import { useCan } from '../../context/AuthContext'
 import EntityMap, { type Bbox } from '../../components/EntityMap'
 import CreateEntityDialog from './CreateEntityDialog'
 import { formatTime, formatValue } from './format'
+import PageHeader from '../../components/PageHeader'
 
 const MAP_LIMIT = 1000
 
@@ -157,16 +159,11 @@ export default function Entities() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-        <Box>
-          <Typography variant="h5" fontWeight={700}>
-            {t('entities.title')}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {t('entities.subtitle')}
-          </Typography>
-        </Box>
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+      <PageHeader
+        title={t('entities.title')}
+        subtitle={t('entities.subtitle')}
+        actions={
+        <>
           <ToggleButtonGroup size="small" exclusive value={view} onChange={(_, v) => v && update({ view: v === 'map' ? 'map' : '' })}>
             <ToggleButton value="list" aria-label={t('entities.listView')}>
               <ViewListIcon fontSize="small" />
@@ -176,21 +173,22 @@ export default function Entities() {
             </ToggleButton>
           </ToggleButtonGroup>
           <Tooltip title={t('common.refresh')}>
-            <IconButton onClick={fetch} size="small">
+            <IconButton onClick={fetch}>
               <RefreshIcon />
             </IconButton>
           </Tooltip>
           {canWrite && (
-            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)} size="small">
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
               {t('entities.create')}
             </Button>
           )}
-        </Box>
-      </Box>
+        </>
+        }
+      />
 
       {/* Filters */}
       <Card sx={{ mb: 2 }}>
-        <CardContent sx={{ pb: '16px !important' }}>
+        <CardContent>
           <Grid container spacing={1.5} alignItems="center">
             <Grid item xs={12} sm={6} md={2}>
               <TextField
@@ -209,7 +207,7 @@ export default function Entities() {
                 ))}
               </TextField>
             </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid item xs={12} sm={6} md={2.5}>
               <TextField
                 label={t('entities.idPattern')}
                 placeholder="plant1:line3:*"
@@ -221,7 +219,7 @@ export default function Entities() {
                 size="small"
               />
             </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid item xs={12} sm={6} md={2.5}>
               <TextField
                 label={t('entities.relatedTo')}
                 placeholder="plant1:line3"
@@ -233,7 +231,7 @@ export default function Entities() {
                 size="small"
               />
             </Grid>
-            <Grid item xs={6} sm={3} md={1}>
+            <Grid item xs={6} sm={3} md={1.5}>
               <TextField
                 select
                 label={t('entities.direction')}
@@ -264,7 +262,7 @@ export default function Entities() {
                 ))}
               </TextField>
             </Grid>
-            <Grid item xs={10} sm={5} md={1.5}>
+            <Grid item xs={10} sm={5} md={2}>
               <TextField
                 select
                 label={t('entities.orderBy')}
@@ -356,7 +354,7 @@ export default function Entities() {
                     sx={{ cursor: 'pointer' }}
                   >
                     <TableCell>
-                      <Typography variant="body2" fontFamily="monospace" fontWeight={500}>
+                      <Typography variant="body2" fontFamily={MONO} fontWeight={500}>
                         {e.id}
                       </Typography>
                     </TableCell>

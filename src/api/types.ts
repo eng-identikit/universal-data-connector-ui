@@ -171,7 +171,8 @@ export interface HistoryRecordsResponse {
 export interface MappedEntity {
   id: string
   type: string
-  sourceId?: string
+  /** The connector that produced the entity: metadata.sourceId (or metadata.source) */
+  metadata?: { sourceId?: string; source?: string; [key: string]: unknown }
   [key: string]: unknown
 }
 

@@ -37,12 +37,24 @@ export default function Login() {
         p: 2,
       }}
     >
-      <Card sx={{ width: '100%', maxWidth: 380 }}>
-        <CardContent sx={{ p: 4 }}>
+      <Card sx={{ width: '100%', maxWidth: 400 }}>
+        <CardContent sx={{ p: 4, '&:last-child': { pb: 4 } }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
-            <HubIcon sx={{ color: theme.palette.primary.main, fontSize: 36 }} />
+            <Box
+              sx={{
+                width: 40,
+                height: 40,
+                borderRadius: 1,
+                display: 'grid',
+                placeItems: 'center',
+                bgcolor: 'primary.main',
+                color: 'primary.contrastText',
+              }}
+            >
+              <HubIcon sx={{ fontSize: 24 }} />
+            </Box>
             <Box>
-              <Typography variant="h6" fontWeight={700} lineHeight={1.2}>
+              <Typography variant="h6" lineHeight={1.2}>
                 Universal Data Connector
               </Typography>
               <Typography variant="caption" color="text.secondary">
@@ -60,7 +72,7 @@ export default function Login() {
               autoComplete="username"
               autoFocus
               required
-              size="small"
+              size="medium"
             />
             <TextField
               label={t('login.password')}
@@ -69,9 +81,9 @@ export default function Login() {
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
               required
-              size="small"
+              size="medium"
             />
-            <Button type="submit" variant="contained" disabled={busy || !username || !password}>
+            <Button type="submit" variant="contained" size="large" disabled={busy || !username || !password}>
               {t('login.submit')}
             </Button>
           </Box>

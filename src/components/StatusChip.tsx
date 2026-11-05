@@ -28,11 +28,10 @@ export default function StatusChip({ status, size = 'small' }: StatusChipProps) 
 
   return (
     <Chip
-      icon={<CircleIcon sx={{ fontSize: '10px !important' }} />}
+      icon={<CircleIcon sx={{ fontSize: '8px !important', color: 'inherit !important', ml: '6px !important' }} />}
       label={t(cfg.labelKey)}
       color={cfg.color}
       size={size}
-      variant="outlined"
       sx={{ fontWeight: 600 }}
     />
   )

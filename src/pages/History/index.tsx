@@ -1,9 +1,11 @@
+import { MONO } from '../../theme'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams, Link as RouterLink } from 'react-router-dom'
 import { Box, Typography, Card, CardContent, Autocomplete, TextField, Link, Alert } from '@mui/material'
 import { listEntities, getEntity, type Entity } from '../../api/broker'
 import EntityHistory from '../../components/EntityHistory'
+import PageHeader from '../../components/PageHeader'
 
 /** History of any entity: search by id, then charts per attribute. */
 export default function History() {
@@ -42,15 +44,10 @@ export default function History() {
 
   return (
     <Box>
-      <Typography variant="h5" fontWeight={700}>
-        {t('history.title')}
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        {t('history.subtitle')}
-      </Typography>
+      <PageHeader title={t('history.title')} subtitle={t('history.subtitle')} />
 
       <Card sx={{ mb: 2 }}>
-        <CardContent sx={{ pb: '16px !important' }}>
+        <CardContent>
           <Autocomplete
             options={options}
             getOptionLabel={(o) => o.id}
@@ -63,7 +60,7 @@ export default function History() {
             renderOption={(props, o) => (
               <li {...props} key={o.id}>
                 <Box>
-                  <Typography variant="body2" fontFamily="monospace">
+                  <Typography variant="body2" fontFamily={MONO}>
                     {o.id}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
@@ -77,7 +74,7 @@ export default function History() {
           />
           {entity && (
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-              <Link component={RouterLink} to={`/entities/${encodeURIComponent(entity.id)}`} fontFamily="monospace">
+              <Link component={RouterLink} to={`/entities/${encodeURIComponent(entity.id)}`} fontFamily={MONO}>
                 {entity.id}
               </Link>{' '}
               · {entity.type}

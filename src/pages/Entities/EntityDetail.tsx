@@ -1,3 +1,4 @@
+import { MONO } from '../../theme'
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams, Link as RouterLink } from 'react-router-dom'
@@ -54,6 +55,8 @@ import EntityHistory from '../../components/EntityHistory'
 import LocationPanel from './LocationPanel'
 import SettingsRemoteIcon from '@mui/icons-material/SettingsRemote'
 import { formatTime, formatValue, qualityColor } from './format'
+import PageHeader from '../../components/PageHeader'
+import { CodeBlock } from '../../components/Code'
 
 const entityPath = (id: string) => `/entities/${encodeURIComponent(id)}`
 
@@ -63,12 +66,12 @@ function EntityLink({ id, type }: { id: string; type?: string | null }) {
     <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
       {type === null ? (
         <Tooltip title={t('entity.missingTarget')}>
-          <Typography component="span" variant="body2" fontFamily="monospace" color="warning.main">
+          <Typography component="span" variant="body2" fontFamily={MONO} color="warning.main">
             {id}
           </Typography>
         </Tooltip>
       ) : (
-        <Link component={RouterLink} to={entityPath(id)} fontFamily="monospace" variant="body2">
+        <Link component={RouterLink} to={entityPath(id)} fontFamily={MONO} variant="body2">
           {id}
         </Link>
       )}
@@ -166,7 +169,7 @@ export default function EntityDetail() {
   if (!entity) {
     return (
       <Box>
-        <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/entities')} sx={{ mb: 2 }}>
+        <Button startIcon={<ArrowBackIcon />} color="inherit" onClick={() => navigate('/entities')} sx={{ mb: 2, ml: -1 }}>
           {t('entity.back')}
         </Button>
         {error ? <Alert severity="error">{error}</Alert> : <Skeleton variant="rounded" height={240} />}
@@ -178,16 +181,16 @@ export default function EntityDetail() {
 
   return (
     <Box>
-      <Button startIcon={<ArrowBackIcon />} onClick={() => navigate(-1)} sx={{ mb: 1 }}>
-        {t('entity.back')}
-      </Button>
-
-      <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2, gap: 2 }}>
-        <Box sx={{ minWidth: 0 }}>
-          <Typography variant="h5" fontWeight={700} fontFamily="monospace" sx={{ wordBreak: 'break-all' }}>
-            {entity.id}
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mt: 0.5, flexWrap: 'wrap' }}>
+      <PageHeader
+        overline={
+          <Button startIcon={<ArrowBackIcon />} color="inherit" onClick={() => navigate(-1)} sx={{ mb: 1, ml: -1 }}>
+            {t('entity.back')}
+          </Button>
+        }
+        title={entity.id}
+        titleProps={{ fontFamily: MONO, sx: { wordBreak: 'break-all' } }}
+        subtitle={
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
             <Chip label={entity.type} size="small" color="primary" />
             <Typography variant="caption" color="text.secondary">
               v{entity.version} · {t('entity.created')} {formatTime(entity.createdAt)} · {t('entities.updated')}{' '}
@@ -201,26 +204,22 @@ export default function EntityDetail() {
               />
             )}
           </Box>
-        </Box>
-        <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
-          <Tooltip title={t('common.refresh')}>
-            <IconButton onClick={load} size="small">
-              <RefreshIcon />
-            </IconButton>
-          </Tooltip>
-          {canWrite && (
-            <Button
-              color="error"
-              variant="outlined"
-              size="small"
-              startIcon={<DeleteIcon />}
-              onClick={() => setConfirm({ kind: 'entity' })}
-            >
-              {t('common.delete')}
-            </Button>
-          )}
-        </Box>
-      </Box>
+        }
+        actions={
+          <>
+            <Tooltip title={t('common.refresh')}>
+              <IconButton onClick={load}>
+                <RefreshIcon />
+              </IconButton>
+            </Tooltip>
+            {canWrite && (
+              <Button color="error" variant="outlined" startIcon={<DeleteIcon />} onClick={() => setConfirm({ kind: 'entity' })}>
+                {t('common.delete')}
+              </Button>
+            )}
+          </>
+        }
+      />
 
       {conflict && (
         <Alert
@@ -295,7 +294,7 @@ export default function EntityDetail() {
                           )}
                         </Box>
                         {attr.meta && Object.keys(attr.meta).length > 0 && (
-                          <Typography variant="caption" color="text.secondary" fontFamily="monospace">
+                          <Typography variant="caption" color="text.secondary" fontFamily={MONO}>
                             {JSON.stringify(attr.meta)}
                           </Typography>
                         )}
@@ -307,7 +306,7 @@ export default function EntityDetail() {
                         {attr.type === 'relationship' && attr.target ? (
                           <EntityLink id={attr.target} />
                         ) : (
-                          <Typography variant="body2" fontFamily="monospace">
+                          <Typography variant="body2" fontFamily={MONO}>
                             {formatValue(attr)}
                           </Typography>
                         )}
@@ -439,20 +438,7 @@ export default function EntityDetail() {
                     </Button>
                   </Box>
                 )}
-                <Box
-                  component="pre"
-                  sx={{
-                    m: 0,
-                    p: 2,
-                    bgcolor: 'action.hover',
-                    borderRadius: 1,
-                    fontSize: '0.75rem',
-                    overflow: 'auto',
-                    maxHeight: 600,
-                  }}
-                >
-                  {JSON.stringify(entity, null, 2)}
-                </Box>
+                <CodeBlock maxHeight={600}>{JSON.stringify(entity, null, 2)}</CodeBlock>
               </>
             ) : (
               <>
@@ -465,7 +451,7 @@ export default function EntityDetail() {
                   fullWidth
                   multiline
                   minRows={16}
-                  InputProps={{ sx: { fontFamily: 'monospace', fontSize: '0.75rem' } }}
+                  InputProps={{ sx: { fontFamily: MONO, fontSize: '0.75rem' } }}
                 />
                 <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', mt: 1 }}>
                   <Button color="inherit" onClick={() => setJsonDraft(null)}>

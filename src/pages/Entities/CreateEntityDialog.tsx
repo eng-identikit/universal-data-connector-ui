@@ -1,3 +1,4 @@
+import { MONO } from '../../theme'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -149,7 +150,7 @@ export default function CreateEntityDialog({ open, types, onCancel, onCreated }:
             fullWidth
             multiline
             minRows={12}
-            InputProps={{ sx: { fontFamily: 'monospace', fontSize: '0.8rem' } }}
+            InputProps={{ sx: { fontFamily: MONO, fontSize: '0.8rem' } }}
           />
         )}
       </DialogContent>

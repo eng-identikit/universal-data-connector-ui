@@ -12,13 +12,11 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
   IconButton,
   Tooltip,
   Alert,
   Skeleton,
   Switch,
-  useTheme,
   Snackbar,
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
@@ -29,14 +27,18 @@ import StopIcon from '@mui/icons-material/Stop'
 import RestartAltIcon from '@mui/icons-material/RestartAlt'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import StatusChip from '../../components/StatusChip'
+import PageHeader from '../../components/PageHeader'
+import { CodeTag } from '../../components/Code'
+import { useAuth } from '../../context/AuthContext'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import ConnectorDialog from './ConnectorDialog'
-import { getSources, startSource, stopSource, restartSource, deleteSource, updateSource } from '../../api/endpoints'
+import { getSources, startSource, stopSource, restartSource, deleteSource, updateSource, reloadSources } from '../../api/endpoints'
 import type { Source } from '../../api/types'
 
 export default function Connectors() {
   const { t } = useTranslation()
-  const theme = useTheme()
+  // Connector configuration is global infrastructure: only a superadmin may change it
+  const canManage = !!useAuth().user?.isSuperadmin
 
   const [sources, setSources] = useState<Source[]>([])
   const [loading, setLoading] = useState(true)
@@ -92,6 +94,8 @@ export default function Connectors() {
   const handleToggleEnabled = async (source: Source) => {
     try {
       await updateSource(source.id, { enabled: !source.enabled })
+      // Saving only writes sources.json: reload so the engine starts or stops the connector
+      await reloadSources()
       fetchSources()
     } catch (err) {
       showSnack(err instanceof Error ? err.message : 'Error', 'error')
@@ -113,25 +117,27 @@ export default function Connectors() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-        <Typography variant="h5" fontWeight={700}>
-          {t('connectors.title')}
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Tooltip title={t('common.refresh')}>
-            <IconButton onClick={fetchSources} size="small">
-              <RefreshIcon />
-            </IconButton>
-          </Tooltip>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => { setEditingSource(null); setDialogOpen(true) }}
-          >
-            {t('connectors.addConnector')}
-          </Button>
-        </Box>
-      </Box>
+      <PageHeader
+        title={t('connectors.title')}
+        actions={
+          <>
+            <Tooltip title={t('common.refresh')}>
+              <IconButton onClick={fetchSources}>
+                <RefreshIcon />
+              </IconButton>
+            </Tooltip>
+            {canManage && (
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => { setEditingSource(null); setDialogOpen(true) }}
+              >
+                {t('connectors.addConnector')}
+              </Button>
+            )}
+          </>
+        }
+      />
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
@@ -148,7 +154,7 @@ export default function Connectors() {
               <Typography color="text.secondary">{t('connectors.noConnectors')}</Typography>
             </Box>
           ) : (
-            <TableContainer component={Paper} elevation={0}>
+            <TableContainer>
               <Table>
                 <TableHead>
                   <TableRow>
@@ -159,7 +165,7 @@ export default function Connectors() {
                     <TableCell align="right">{t('connectors.dataPoints')}</TableCell>
                     <TableCell align="right">{t('connectors.errors')}</TableCell>
                     <TableCell>{t('connectors.lastActivity')}</TableCell>
-                    <TableCell align="center">{t('common.actions')}</TableCell>
+                    {canManage && <TableCell align="right">{t('common.actions')}</TableCell>}
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -176,19 +182,7 @@ export default function Connectors() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Box
-                          component="span"
-                          sx={{
-                            px: 1,
-                            py: 0.25,
-                            borderRadius: 1,
-                            bgcolor: theme.palette.action.selected,
-                            fontFamily: 'monospace',
-                            fontSize: '0.75rem',
-                          }}
-                        >
-                          {src.type}
-                        </Box>
+                        <CodeTag>{src.type}</CodeTag>
                       </TableCell>
                       <TableCell>
                         <StatusChip status={src.runtime?.status ?? 'unknown'} />
@@ -197,6 +191,7 @@ export default function Connectors() {
                         <Switch
                           size="small"
                           checked={src.enabled}
+                          disabled={!canManage}
                           onChange={() => handleToggleEnabled(src)}
                         />
                       </TableCell>
@@ -218,8 +213,8 @@ export default function Connectors() {
                             : '—'}
                         </Typography>
                       </TableCell>
-                      <TableCell align="center">
-                        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
+                      {canManage && <TableCell align="right">
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
                           <Tooltip title={t('common.start')}>
                             <IconButton
                               size="small"
@@ -265,7 +260,7 @@ export default function Connectors() {
                             </IconButton>
                           </Tooltip>
                         </Box>
-                      </TableCell>
+                      </TableCell>}
                     </TableRow>
                   ))}
                 </TableBody>

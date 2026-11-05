@@ -27,7 +27,11 @@
     "stop": "Stop",
     "restart": "Restart",
     "noData": "No data available",
-    "updatedAt": "Updated at"
+    "updatedAt": "Updated at",
+    "collapse": "Collapse",
+    "expand": "Expand",
+    "retry": "Retry",
+    "pageError": "This page ran into an error"
   },
   "connectorStatus": {
     "connected": "Connected",
@@ -49,7 +53,8 @@
     "history": "History",
     "entities": "Entities",
     "admin": "Administration",
-    "subscriptions": "Subscriptions"
+    "subscriptions": "Subscriptions",
+    "transformers": "Transformers"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -380,7 +385,9 @@
       "apikeys": "API keys",
       "tenants": "Tenants",
       "users": "Users",
-      "cluster": "Cluster"
+      "cluster": "Cluster",
+      "sessions": "Sessions",
+      "accessLog": "Access log"
     },
     "tenant": "Tenant",
     "role": "Role",
@@ -536,7 +543,16 @@
     "deleteMessage": "Delete subscription {{name}}? Queued notifications and the DLQ are discarded.",
     "pickOnMap": "Pick on map",
     "pickOnMapHelp": "Pan and zoom: the visible area becomes the subscription bounding box.",
-    "useVisibleArea": "Use visible area"
+    "useVisibleArea": "Use visible area",
+    "output": "Output format",
+    "outputNone": "Standard",
+    "outputLibrary": "From the library",
+    "outputCustom": "Custom",
+    "outputNoneHelp": "The broker's notification as it is (JSON).",
+    "outputHelp": "A JSONata transformer decides the message sent to the receiver.",
+    "transformer": "Transformer",
+    "transformerMissing": "Transformer {{id}} is no longer in the library",
+    "retrying": "Waiting to retry"
   },
   "commands": {
     "title": "Commands",
@@ -588,5 +604,74 @@
     "ingested": "Updates applied (this instance)",
     "rejected": "{{n}} rejected",
     "lastIngestError": "Last ingest error"
+  },
+  "sessions": {
+    "none": "No active sessions",
+    "user": "User",
+    "allUsers": "All users",
+    "client": "Client",
+    "address": "Address",
+    "started": "Started",
+    "lastActivity": "Last activity",
+    "expires": "Expires",
+    "thisSession": "This session",
+    "revoke": "Revoke",
+    "logoutHere": "Log out",
+    "revokeAll": "Revoke all",
+    "revokeTitle": "Revoke the session?",
+    "revokeMessage": "{{user}}'s session from {{ip}} will end now: they will have to log in again.",
+    "revokeOwnMessage": "This is the session you are using: you will be logged out.",
+    "revokeAllMessage": "All of {{user}}'s sessions will end now, on every device.",
+    "revokedCount": "{{count}} of {{user}}'s sessions ended",
+    "signOutEverywhere": "Sign out everywhere",
+    "summary": "{{sessions}} active sessions · {{users}} users online",
+    "storeHelp": "Where sessions are kept: Redis when configured, otherwise PostgreSQL",
+    "mine": "My sessions",
+    "mineHelp": "Devices and browsers you are logged in from. Revoke the ones you do not recognise."
+  },
+  "accessLog": {
+    "event": "Event",
+    "allEvents": "All events",
+    "from": "From",
+    "to": "To",
+    "time": "Date and time",
+    "details": "Details",
+    "by": "by {{actor}}",
+    "none": "No events",
+    "rowsPerPage": "Rows per page",
+    "kind": {
+      "login": "Login",
+      "login_failed": "Failed login",
+      "login_blocked": "Blocked login",
+      "logout": "Logout",
+      "refresh_reuse": "Token reused",
+      "session_revoked": "Session revoked",
+      "user_sessions_revoked": "User sessions revoked"
+    }
+  },
+  "transformers": {
+    "title": "Transformers",
+    "subtitle": "Output formats for subscriptions: JSONata expressions that turn the notification into the message the receiver expects. Stored in config/transformers.json.",
+    "jsonataDocs": "JSONata guide",
+    "new": "New transformer",
+    "none": "No transformers in the library",
+    "name": "Name",
+    "description": "Description",
+    "expression": "JSONata expression",
+    "expressionHelp": "Input: the notification { reason, timestamp, subscriptionName, entities[] } plus entity (the first entity). An object or array is sent as JSON, a string as text; no result skips the message.",
+    "idHelp": "Lowercase letters, digits, _ and -. Cannot be changed.",
+    "view": "View",
+    "delete": "Delete the transformer?",
+    "deleteMessage": "The transformer {{name}} will be removed from the library.",
+    "preview": "Preview",
+    "hidePreview": "Hide preview",
+    "previewTypes": "Entity types",
+    "previewEntities": "Entities",
+    "previewEntitiesHelp": "Empty = the first entity of the chosen types",
+    "perEntity": "One message per entity",
+    "run": "Run",
+    "noOutput": "No result: the message would not be sent.",
+    "showInput": "Show input",
+    "hideInput": "Hide input"
   }
 }

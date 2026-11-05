@@ -1,3 +1,4 @@
+import { MONO } from '../../theme'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -37,6 +38,8 @@ import {
   listEntities,
   getTypes,
   getBrokerHealth,
+  listTransformers,
+  type Transformer,
   type BrokerHealth,
   type Subscription,
   type SubscriptionInput,
@@ -45,6 +48,7 @@ import {
   type Entity,
 } from '../../api/broker'
 import FilterEditor from './FilterEditor'
+import TransformerPreview from '../../components/TransformerPreview'
 
 interface Form {
   name: string
@@ -76,17 +80,27 @@ interface Form {
   projection: string[]
   format: 'full' | 'values'
   perEntity: boolean
+  /** Output transformer: none, one from the library, or an inline expression */
+  output: 'none' | 'library' | 'custom'
+  transformerId: string
+  transformExpression: string
   maxRetries: string
   backoffS: string
   expiresAt: string
+  /** Notify fields of the edited subscription that the form has no control for (e.g. timeoutMs) */
+  notifyExtra: Record<string, unknown>
+  notifyExtraChannel: Channel | null
 }
+
+// Notify fields the form edits; anything else is carried over unchanged on save
+const FORM_NOTIFY_KEYS = ['channel', 'url', 'method', 'headers', 'topic', 'qos', 'retain', 'username', 'password', 'subject', 'attrs', 'format', 'perEntity', 'transformer', 'transform']
 
 const EMPTY: Form = {
   name: '', description: '', types: [], idPattern: '', ids: [], relatedId: '', relatedDepth: 1, relatedDirection: 'in',
   bbox: ['', '', '', ''], on: ['create', 'update', 'delete'], watched: [], deadband: [], throttleS: '', periodicS: '',
   filter: '', filterMode: 'level', channel: 'http', url: '', method: 'POST', headers: [], topic: 'udc/{tenant}/{entityType}/{entityId}',
-  qos: 1, retain: false, username: '', password: '', subject: 'udc.{tenant}.{entityType}', projection: [], format: 'full',
-  perEntity: false, maxRetries: '10', backoffS: '1', expiresAt: '',
+  qos: 1, retain: false, username: '', password: '', subject: 'events.{tenant}.{entityType}', projection: [], format: 'full',
+  perEntity: false, output: 'none', transformerId: '', transformExpression: '', maxRetries: '10', backoffS: '1', expiresAt: '', notifyExtra: {}, notifyExtraChannel: null,
 }
 
 const toLocalInput = (iso: string) => {
@@ -127,9 +141,14 @@ function fromSubscription(s: Subscription): Form {
     projection: n.attrs ?? [],
     format: n.format ?? 'full',
     perEntity: !!n.perEntity,
+    output: n.transform?.expression ? 'custom' : n.transformer ? 'library' : 'none',
+    transformerId: n.transformer ?? '',
+    transformExpression: n.transform?.expression ?? '',
     maxRetries: String(s.delivery.maxRetries),
     backoffS: String(s.delivery.backoffMs / 1000),
     expiresAt: s.expiresAt ? toLocalInput(s.expiresAt) : '',
+    notifyExtra: Object.fromEntries(Object.entries(n).filter(([k]) => !FORM_NOTIFY_KEYS.includes(k))),
+    notifyExtraChannel: n.channel,
   }
 }
 
@@ -148,10 +167,14 @@ function selectOf(f: Form): SubscriptionInput['select'] {
 
 function toInput(f: Form): SubscriptionInput {
   const notify: SubscriptionInput['notify'] = {
+    // Channel-specific extras only apply while the channel is unchanged
+    ...(f.notifyExtraChannel === f.channel ? f.notifyExtra : {}),
     channel: f.channel,
     attrs: f.projection,
     format: f.format,
     perEntity: f.perEntity,
+    transformer: f.output === 'library' ? f.transformerId : null,
+    transform: f.output === 'custom' ? { expression: f.transformExpression } : null,
   }
   if (f.channel === 'http') {
     Object.assign(notify, {
@@ -201,6 +224,8 @@ export default function SubscriptionWizard({ open, subscription, onClose, onSave
   const [mapOpen, setMapOpen] = useState(false)
   const [mapBbox, setMapBbox] = useState<Bbox | null>(null)
   const [mapEntities, setMapEntities] = useState<Entity[]>([])
+  const [transformers, setTransformers] = useState<Transformer[]>([])
+  const [previewOpen, setPreviewOpen] = useState(false)
   // MQTT and NATS are optional on the server: without a default broker the URL is mandatory
   const [defaultBrokers, setDefaultBrokers] = useState<BrokerHealth['defaultBrokers']>({ mqtt: true, nats: true })
 
@@ -227,7 +252,11 @@ export default function SubscriptionWizard({ open, subscription, onClose, onSave
     getBrokerHealth()
       .then((h) => h.defaultBrokers && setDefaultBrokers(h.defaultBrokers))
       .catch(() => {})
-  }, [open, subscription])
+    listTransformers()
+      .then(setTransformers)
+      .catch(() => setTransformers([]))
+    // Initialise once per opening: the parent may pass a fresh copy of the same subscription while polling
+  }, [open, subscription?.id])
 
   const set = <K extends keyof Form>(key: K, value: Form[K]) => setForm((f) => ({ ...f, [key]: value }))
 
@@ -250,11 +279,14 @@ export default function SubscriptionWizard({ open, subscription, onClose, onSave
   const urlRequired = (form.channel === 'mqtt' || form.channel === 'nats') && !defaultBrokers[form.channel]
   const urlMissing = urlRequired && !form.url.trim()
 
+  const outputValid =
+    form.output === 'none' || (form.output === 'library' ? !!form.transformerId : !!form.transformExpression.trim())
+
   const stepValid = [
     form.name.trim() !== '',
     form.on.length > 0,
     true,
-    form.channel === 'http' ? /^https?:\/\//.test(form.url.trim()) : form.channel === 'mqtt' ? !!form.topic.trim() && !urlMissing : form.channel === 'nats' ? !!form.subject.trim() && !urlMissing : true,
+    (form.channel === 'http' ? /^https?:\/\//.test(form.url.trim()) : form.channel === 'mqtt' ? !!form.topic.trim() && !urlMissing : form.channel === 'nats' ? !!form.subject.trim() && !urlMissing : true) && outputValid,
   ]
 
   const save = async () => {
@@ -279,7 +311,7 @@ export default function SubscriptionWizard({ open, subscription, onClose, onSave
           </Typography>
           <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.5 }}>
             {preview.map((e) => (
-              <Chip key={e.id} size="small" label={`${e.id} · ${e.type}`} sx={{ fontFamily: 'monospace', fontSize: '0.7rem' }} />
+              <Chip key={e.id} size="small" label={`${e.id} · ${e.type}`} sx={{ fontFamily: MONO, fontSize: '0.7rem' }} />
             ))}
           </Box>
         </Alert>
@@ -639,6 +671,82 @@ export default function SubscriptionWizard({ open, subscription, onClose, onSave
             <Grid item xs={6} sm={3}>
               <FormControlLabel control={<Switch checked={form.perEntity} onChange={(e) => set('perEntity', e.target.checked)} />} label={t('subs.perEntity')} />
             </Grid>
+
+            <Grid item xs={12}>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                {t('subs.output')}
+              </Typography>
+              <ToggleButtonGroup exclusive size="small" value={form.output} onChange={(_, v) => v && set('output', v)}>
+                <ToggleButton value="none">{t('subs.outputNone')}</ToggleButton>
+                <ToggleButton value="library">{t('subs.outputLibrary')}</ToggleButton>
+                <ToggleButton value="custom">{t('subs.outputCustom')}</ToggleButton>
+              </ToggleButtonGroup>
+              <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 0.5 }}>
+                {t(form.output === 'none' ? 'subs.outputNoneHelp' : 'subs.outputHelp')}
+              </Typography>
+            </Grid>
+            {form.output === 'library' && (
+              <Grid item xs={12}>
+                <TextField
+                  select
+                  label={t('subs.transformer')}
+                  value={transformers.some((x) => x.id === form.transformerId) ? form.transformerId : ''}
+                  onChange={(e) => set('transformerId', e.target.value)}
+                  fullWidth
+                  size="small"
+                  error={!!form.transformerId && !transformers.some((x) => x.id === form.transformerId)}
+                  helperText={
+                    form.transformerId && !transformers.some((x) => x.id === form.transformerId)
+                      ? t('subs.transformerMissing', { id: form.transformerId })
+                      : (transformers.find((x) => x.id === form.transformerId)?.description ?? undefined)
+                  }
+                >
+                  {transformers.map((x) => (
+                    <MenuItem key={x.id} value={x.id}>
+                      {x.name}
+                      <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1, fontFamily: MONO }}>
+                        {x.id}
+                      </Typography>
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+            )}
+            {form.output === 'custom' && (
+              <Grid item xs={12}>
+                <TextField
+                  label={t('transformers.expression')}
+                  value={form.transformExpression}
+                  onChange={(e) => set('transformExpression', e.target.value)}
+                  multiline
+                  minRows={5}
+                  maxRows={16}
+                  fullWidth
+                  inputProps={{ spellCheck: false, style: { fontFamily: MONO, fontSize: '0.8125rem' } }}
+                  helperText={t('transformers.expressionHelp')}
+                />
+              </Grid>
+            )}
+            {form.output !== 'none' && (
+              <Grid item xs={12}>
+                <Button size="small" startIcon={<VisibilityIcon />} onClick={() => setPreviewOpen((v) => !v)}>
+                  {previewOpen ? t('transformers.hidePreview') : t('transformers.preview')}
+                </Button>
+                {previewOpen && (
+                  <Box sx={{ mt: 1.5, p: 2, border: 1, borderColor: 'divider', borderRadius: 2 }}>
+                    <TransformerPreview
+                      key={`${form.output}:${form.transformerId}`}
+                      expression={form.output === 'custom' ? form.transformExpression : undefined}
+                      transformer={form.output === 'library' ? form.transformerId : undefined}
+                      types={form.types}
+                      attrs={form.projection}
+                      format={form.format}
+                      perEntity={form.perEntity}
+                    />
+                  </Box>
+                )}
+              </Grid>
+            )}
             {form.channel !== 'websocket' && (
               <>
                 <Grid item xs={6} sm={3}>
@@ -691,7 +799,7 @@ export default function SubscriptionWizard({ open, subscription, onClose, onSave
           </Typography>
           <EntityMap entities={mapEntities} height={420} onBoundsChange={setMapBbox} fitToEntities={false} />
           {mapBbox && (
-            <Typography variant="caption" fontFamily="monospace" display="block" sx={{ mt: 1 }}>
+            <Typography variant="caption" fontFamily={MONO} display="block" sx={{ mt: 1 }}>
               {mapBbox.map((v) => v.toFixed(5)).join(', ')}
             </Typography>
           )}

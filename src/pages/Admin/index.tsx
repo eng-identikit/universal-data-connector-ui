@@ -7,8 +7,11 @@ import ApiKeysTab from './ApiKeysTab'
 import TenantsTab from './TenantsTab'
 import UsersTab from './UsersTab'
 import ClusterTab from './ClusterTab'
+import SessionsTab from './SessionsTab'
+import AccessLogTab from './AccessLogTab'
+import PageHeader from '../../components/PageHeader'
 
-type TabKey = 'members' | 'apikeys' | 'tenants' | 'users' | 'cluster'
+type TabKey = 'members' | 'apikeys' | 'tenants' | 'users' | 'sessions' | 'accessLog' | 'cluster'
 
 export default function Admin() {
   const { t } = useTranslation()
@@ -18,7 +21,7 @@ export default function Admin() {
 
   const tabs: TabKey[] = [
     ...(isTenantAdmin && tenant ? (['members', 'apikeys'] as TabKey[]) : []),
-    ...(isSuperadmin ? (['tenants', 'users', 'cluster'] as TabKey[]) : []),
+    ...(isSuperadmin ? (['tenants', 'users', 'sessions', 'accessLog', 'cluster'] as TabKey[]) : []),
   ]
   const [selected, setSelected] = useState<TabKey | null>(null)
   const tab = selected && tabs.includes(selected) ? selected : tabs[0]
@@ -27,9 +30,7 @@ export default function Admin() {
 
   return (
     <Box>
-      <Typography variant="h5" fontWeight={700} gutterBottom>
-        {t('admin.title')}
-      </Typography>
+      <PageHeader title={t('admin.title')} />
       <Card>
         <Tabs value={tab} onChange={(_, v) => setSelected(v)} sx={{ px: 2, borderBottom: 1, borderColor: 'divider' }}>
           {tabs.map((k) => (
@@ -45,6 +46,8 @@ export default function Admin() {
           {tab === 'apikeys' && tenant && <ApiKeysTab tenant={tenant} />}
           {tab === 'tenants' && <TenantsTab />}
           {tab === 'users' && <UsersTab />}
+          {tab === 'sessions' && <SessionsTab />}
+          {tab === 'accessLog' && <AccessLogTab />}
           {tab === 'cluster' && <ClusterTab />}
         </CardContent>
       </Card>

@@ -1,3 +1,4 @@
+import { MONO } from '../../theme'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -82,7 +83,7 @@ function CreateKeyDialog({ open, onClose, onCreated }: { open: boolean; onClose:
               {t('admin.keyShownOnce')}
             </Alert>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1.5, bgcolor: 'action.hover', borderRadius: 1 }}>
-              <Typography fontFamily="monospace" fontSize="0.85rem" sx={{ wordBreak: 'break-all', flexGrow: 1 }}>
+              <Typography fontFamily={MONO} fontSize="0.85rem" sx={{ wordBreak: 'break-all', flexGrow: 1 }}>
                 {created}
               </Typography>
               <Tooltip title={t('admin.copy')}>
@@ -207,7 +208,7 @@ export default function ApiKeysTab({ tenant }: { tenant: string }) {
                   {k.createdBy ?? '—'} · {formatTime(k.createdAt)}
                 </Typography>
               </TableCell>
-              <TableCell sx={{ fontFamily: 'monospace' }}>{k.prefix}…</TableCell>
+              <TableCell sx={{ fontFamily: MONO }}>{k.prefix}…</TableCell>
               <TableCell>{t(`roles.${k.role}`)}</TableCell>
               <TableCell>
                 {k.allowedTypes?.map((x) => <Chip key={x} size="small" label={x} sx={{ mr: 0.5 }} />) ?? t('admin.allTypes')}

@@ -53,17 +53,20 @@ import SubscriptionWizard from './SubscriptionWizard'
 import { channelIcon } from './channelIcon'
 import { destination, selectorSummary, statusColor, statusOf } from './format'
 import { formatTime } from '../Entities/format'
+import PageHeader from '../../components/PageHeader'
+import { CodeBlock } from '../../components/Code'
+import { MONO } from '../../theme'
 
 const MAX_LIVE = 100
 
 function Stat({ label, value, color }: { label: string; value: string | number; color?: string }) {
   return (
-    <Card variant="outlined">
+    <Card sx={{ height: '100%' }}>
       <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
-        <Typography variant="caption" color="text.secondary">
+        <Typography variant="caption" color="text.secondary" noWrap component="div">
           {label}
         </Typography>
-        <Typography variant="h6" fontWeight={700} color={color}>
+        <Typography variant="h6" color={color} noWrap>
           {value}
         </Typography>
       </CardContent>
@@ -85,7 +88,7 @@ function NotificationRow({ n, extra }: { n: Notification; extra?: React.ReactNod
         <TableCell>
           <Chip size="small" label={n.reason} variant="outlined" />
         </TableCell>
-        <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
+        <TableCell sx={{ fontFamily: MONO, fontSize: '0.75rem' }}>
           {n.entities.map((e) => String(e.id)).slice(0, 3).join(', ')}
           {n.entities.length > 3 && ` +${n.entities.length - 3}`}
         </TableCell>
@@ -94,9 +97,7 @@ function NotificationRow({ n, extra }: { n: Notification; extra?: React.ReactNod
       <TableRow>
         <TableCell colSpan={8} sx={{ py: 0, border: open ? undefined : 'none' }}>
           <Collapse in={open}>
-            <Box component="pre" sx={{ m: 1, p: 1.5, bgcolor: 'action.hover', borderRadius: 1, fontSize: '0.7rem', maxHeight: 300, overflow: 'auto' }}>
-              {JSON.stringify(n, null, 2)}
-            </Box>
+            <CodeBlock maxHeight={300} sx={{ my: 1 }}>{JSON.stringify(n, null, 2)}</CodeBlock>
           </Collapse>
         </TableCell>
       </TableRow>
@@ -128,11 +129,13 @@ export default function SubscriptionDetail() {
     }
   }, [id])
 
+  // Polling pauses while the edit dialog is open, so the form is not reset under the user
   useEffect(() => {
+    if (editing) return
     load()
     const timer = setInterval(load, 5000)
     return () => clearInterval(timer)
-  }, [load])
+  }, [load, editing])
 
   const isWs = sub?.notify.channel === 'websocket'
   const stream = useBrokerStream(
@@ -157,7 +160,7 @@ export default function SubscriptionDetail() {
   if (!sub) {
     return (
       <Box>
-        <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/subscriptions')} sx={{ mb: 2 }}>
+        <Button startIcon={<ArrowBackIcon />} color="inherit" onClick={() => navigate('/subscriptions')} sx={{ mb: 2, ml: -1 }}>
           {t('entity.back')}
         </Button>
         {error ? <Alert severity="error">{error}</Alert> : <Skeleton variant="rounded" height={240} />}
@@ -170,33 +173,32 @@ export default function SubscriptionDetail() {
 
   return (
     <Box>
-      <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/subscriptions')} sx={{ mb: 1 }}>
-        {t('entity.back')}
-      </Button>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2, gap: 2, flexWrap: 'wrap' }}>
-        <Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="h5" fontWeight={700}>
-              {sub.name}
-            </Typography>
+      <PageHeader
+        overline={
+          <Button startIcon={<ArrowBackIcon />} color="inherit" onClick={() => navigate('/subscriptions')} sx={{ mb: 1, ml: -1 }}>
+            {t('entity.back')}
+          </Button>
+        }
+        title={
+          <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+            {sub.name}
             <Chip size="small" color={statusColor[status]} label={t(`subs.status.${status}`)} />
           </Box>
-          {sub.description && (
-            <Typography variant="body2" color="text.secondary">
-              {sub.description}
-            </Typography>
-          )}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mt: 0.5 }}>
-            {channelIcon[sub.notify.channel]}
-            <Typography variant="caption" fontFamily="monospace">
-              {destination(sub)}
-            </Typography>
-          </Box>
-        </Box>
-        {canWrite && (
-          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+        }
+        subtitle={
+          <>
+            {sub.description && <Box>{sub.description}</Box>}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mt: 0.5 }}>
+              {channelIcon[sub.notify.channel]}
+              <Typography variant="caption" fontFamily={MONO}>
+                {destination(sub)}
+              </Typography>
+            </Box>
+          </>
+        }
+        actions={canWrite && (
+          <>
             <Button
-              size="small"
               variant="outlined"
               startIcon={<SendIcon />}
               onClick={() =>
@@ -210,23 +212,23 @@ export default function SubscriptionDetail() {
               {t('subs.test')}
             </Button>
             {sub.enabled ? (
-              <Button size="small" variant="outlined" startIcon={<PauseIcon />} onClick={() => run(() => pauseSubscription(sub.id))}>
+              <Button variant="outlined" startIcon={<PauseIcon />} onClick={() => run(() => pauseSubscription(sub.id))}>
                 {t('subs.pause')}
               </Button>
             ) : (
-              <Button size="small" variant="outlined" startIcon={<PlayArrowIcon />} onClick={() => run(() => resumeSubscription(sub.id))}>
+              <Button variant="outlined" startIcon={<PlayArrowIcon />} onClick={() => run(() => resumeSubscription(sub.id))}>
                 {t('subs.resume')}
               </Button>
             )}
-            <Button size="small" variant="outlined" startIcon={<EditIcon />} onClick={() => setEditing(true)}>
-              {t('common.edit')}
-            </Button>
-            <Button size="small" variant="outlined" color="error" startIcon={<DeleteIcon />} onClick={() => setConfirmDelete(true)}>
+            <Button variant="outlined" color="error" startIcon={<DeleteIcon />} onClick={() => setConfirmDelete(true)}>
               {t('common.delete')}
             </Button>
-          </Box>
+            <Button variant="contained" startIcon={<EditIcon />} onClick={() => setEditing(true)}>
+              {t('common.edit')}
+            </Button>
+          </>
         )}
-      </Box>
+      />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
@@ -247,7 +249,8 @@ export default function SubscriptionDetail() {
           <Stat label={t('subs.delivered')} value={st?.delivered ?? 0} color="success.main" />
         </Grid>
         <Grid item xs={6} sm={4} md={2}>
-          <Stat label={t('subs.failed')} value={st?.failedAttempts ?? 0} color={st?.failedAttempts ? 'warning.main' : undefined} />
+          {/* Waiting for their next attempt now; the total of failed attempts is in the list */}
+          <Stat label={t('subs.retrying')} value={st?.retrying ?? 0} color={st?.retrying ? 'warning.main' : undefined} />
         </Grid>
         <Grid item xs={6} sm={4} md={2}>
           <Stat label="DLQ" value={st?.dlq ?? 0} color={st?.dlq ? 'error.main' : undefined} />
@@ -285,6 +288,14 @@ export default function SubscriptionDetail() {
                 [t('subs.periodic'), sub.periodicMs ? `${sub.periodicMs / 1000}` : '—'],
                 [t('subs.projection'), sub.notify.attrs?.join(', ') || t('subs.allAttrs')],
                 [t('subs.format'), `${sub.notify.format}${sub.notify.perEntity ? ` · ${t('subs.perEntity')}` : ''}`],
+                [
+                  t('subs.output'),
+                  sub.notify.transform?.expression
+                    ? t('subs.outputCustom')
+                    : sub.notify.transformer
+                      ? `${t('subs.outputLibrary')}: ${sub.notify.transformer}`
+                      : t('subs.outputNone'),
+                ],
                 [t('subs.delivery'), `${sub.delivery.maxRetries} × ${sub.delivery.backoffMs / 1000}s`],
                 [t('subs.expiresAt'), formatTime(sub.expiresAt)],
                 [t('subs.createdBy'), `${sub.createdBy ?? '—'} · ${formatTime(sub.createdAt)}`],
@@ -293,7 +304,7 @@ export default function SubscriptionDetail() {
                   <Typography variant="caption" color="text.secondary">
                     {label}
                   </Typography>
-                  <Typography variant="body2" fontFamily={label === t('subs.filter') ? 'monospace' : undefined} sx={{ wordBreak: 'break-word' }}>
+                  <Typography variant="body2" fontFamily={label === t('subs.filter') ? MONO : undefined} sx={{ wordBreak: 'break-word' }}>
                     {value}
                   </Typography>
                 </Grid>
@@ -317,7 +328,7 @@ export default function SubscriptionDetail() {
                 <Button size="small" variant="contained" startIcon={<ReplayIcon />} onClick={() => run(() => replayDlq(sub.id), t('subs.replayed'))}>
                   {t('subs.replayAll')}
                 </Button>
-                <Button size="small" color="error" startIcon={<DeleteSweepIcon />} onClick={() => run(() => purgeDlq(sub.id))}>
+                <Button size="small" variant="outlined" color="error" startIcon={<DeleteSweepIcon />} onClick={() => run(() => purgeDlq(sub.id))}>
                   {t('subs.purgeAll')}
                 </Button>
               </Box>
@@ -357,9 +368,11 @@ export default function SubscriptionDetail() {
                                 <ReplayIcon fontSize="small" />
                               </IconButton>
                             </Tooltip>
-                            <IconButton size="small" onClick={() => run(() => purgeDlq(sub.id, [d.id]))}>
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
+                            <Tooltip title={t('common.delete')}>
+                              <IconButton size="small" color="error" onClick={() => run(() => purgeDlq(sub.id, [d.id]))}>
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
                           </TableCell>
                         )}
                       </>

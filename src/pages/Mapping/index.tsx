@@ -12,13 +12,11 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
   IconButton,
   Tooltip,
   Alert,
   Skeleton,
   Collapse,
-  Chip,
 } from '@mui/material'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
@@ -26,23 +24,27 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import DownloadIcon from '@mui/icons-material/Download'
 import { getMappedEntities } from '../../api/endpoints'
 import type { MappedEntity } from '../../api/types'
+import PageHeader from '../../components/PageHeader'
+import { CodeBlock, CodeTag } from '../../components/Code'
+import { MONO } from '../../theme'
 
 function EntityRow({ entity }: { entity: MappedEntity }) {
   const [expanded, setExpanded] = useState(false)
 
-  // Extract known fields
-  const { id, type, sourceId, ...rest } = entity
+  const { t } = useTranslation()
+  const { id, type, ...rest } = entity
+  const sourceId = entity.metadata?.sourceId ?? entity.metadata?.source
 
   return (
     <>
       <TableRow hover>
         <TableCell>
-          <Typography variant="body2" fontFamily="monospace" fontWeight={500}>
+          <Typography variant="body2" fontFamily={MONO} fontWeight={500}>
             {id}
           </Typography>
         </TableCell>
         <TableCell>
-          <Chip label={type} size="small" variant="outlined" />
+          <CodeTag>{type}</CodeTag>
         </TableCell>
         <TableCell>
           <Typography variant="caption" color="text.secondary">
@@ -50,7 +52,7 @@ function EntityRow({ entity }: { entity: MappedEntity }) {
           </Typography>
         </TableCell>
         <TableCell align="right">
-          <Tooltip title={expanded ? 'Collapse' : 'Expand'}>
+          <Tooltip title={expanded ? t('common.collapse') : t('common.expand')}>
             <IconButton size="small" onClick={() => setExpanded(!expanded)}>
               {expanded ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
             </IconButton>
@@ -60,22 +62,7 @@ function EntityRow({ entity }: { entity: MappedEntity }) {
       <TableRow>
         <TableCell colSpan={4} sx={{ py: 0, border: expanded ? undefined : 'none' }}>
           <Collapse in={expanded}>
-            <Box
-              sx={{
-                py: 1.5,
-                px: 2,
-                bgcolor: 'action.hover',
-                borderRadius: 1,
-                my: 0.5,
-                fontFamily: 'monospace',
-                fontSize: '0.75rem',
-                whiteSpace: 'pre-wrap',
-                maxHeight: 300,
-                overflow: 'auto',
-              }}
-            >
-              {JSON.stringify(rest, null, 2)}
-            </Box>
+            <CodeBlock maxHeight={300} sx={{ my: 1 }}>{JSON.stringify(rest, null, 2)}</CodeBlock>
           </Collapse>
         </TableCell>
       </TableRow>
@@ -117,26 +104,21 @@ export default function Mapping() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-        <Typography variant="h5" fontWeight={700}>
-          {t('mapping.title')}
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Tooltip title={t('mapping.exportJson')}>
-            <IconButton onClick={handleExportJson} disabled={!entities.length} size="small">
-              <DownloadIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title={t('mapping.refresh')}>
-            <IconButton onClick={fetch} size="small">
-              <RefreshIcon />
-            </IconButton>
-          </Tooltip>
-          <Button variant="outlined" startIcon={<RefreshIcon />} onClick={fetch} size="small">
-            {t('mapping.refresh')}
-          </Button>
-        </Box>
-      </Box>
+      <PageHeader
+        title={t('mapping.title')}
+        actions={
+          <>
+            <Tooltip title={t('mapping.refresh')}>
+              <IconButton onClick={fetch}>
+                <RefreshIcon />
+              </IconButton>
+            </Tooltip>
+            <Button variant="outlined" startIcon={<DownloadIcon />} onClick={handleExportJson} disabled={!entities.length}>
+              {t('mapping.exportJson')}
+            </Button>
+          </>
+        }
+      />
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
@@ -159,7 +141,7 @@ export default function Mapping() {
                   {t('mapping.entities')} · {entities.length}
                 </Typography>
               </Box>
-              <TableContainer component={Paper} elevation={0}>
+              <TableContainer>
                 <Table size="small">
                   <TableHead>
                     <TableRow>

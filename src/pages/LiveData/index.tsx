@@ -1,3 +1,4 @@
+import { MONO } from '../../theme'
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -42,6 +43,7 @@ import {
 } from 'recharts'
 import { useBrokerStream, type StreamMessage } from '../../hooks/useBrokerStream'
 import StatusChip from '../../components/StatusChip'
+import PageHeader from '../../components/PageHeader'
 
 // ─── Live buffer model ───────────────────────────────────────────────────────
 
@@ -141,10 +143,10 @@ const LiveChart = memo(function LiveChart({ series, points, start, end }: LiveCh
 
   return (
     <Card sx={{ height: '100%' }}>
-      <CardContent sx={{ pb: '12px !important' }}>
+      <CardContent>
         <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 2, mb: 1 }}>
           <Box sx={{ minWidth: 0 }}>
-            <Typography variant="subtitle2" fontWeight={600} sx={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
+            <Typography variant="subtitle2" fontWeight={600} sx={{ fontFamily: MONO, wordBreak: 'break-all' }}>
               {series.measId}
             </Typography>
             <Typography variant="caption" color="text.secondary" sx={{ wordBreak: 'break-all' }}>
@@ -343,21 +345,18 @@ export default function LiveData() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, gap: 1, flexWrap: 'wrap' }}>
-        <Typography variant="h5" fontWeight={700}>
-          {t('liveData.title')}
-        </Typography>
+      <PageHeader
+        title={t('liveData.title')}
+        actions={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
           <Chip
             icon={connected ? <WifiIcon sx={{ fontSize: '14px !important' }} /> : <WifiOffIcon sx={{ fontSize: '14px !important' }} />}
             label={connected ? t('liveData.connected') : t('liveData.disconnected')}
             color={connected ? 'success' : 'default'}
             size="small"
-            variant="outlined"
           />
           <Chip
             size="small"
-            variant="outlined"
             label={`${snap.rate.toLocaleString(undefined, { maximumFractionDigits: 1 })} ${t('liveData.msgPerSec')} · ${snap.total.toLocaleString()} ${t('liveData.messages')}`}
           />
 
@@ -376,17 +375,18 @@ export default function LiveData() {
           </TextField>
 
           <Tooltip title={paused ? t('liveData.resumeStream') : t('liveData.pauseStream')}>
-            <IconButton onClick={() => setPaused(!paused)} size="small" color={paused ? 'warning' : 'default'}>
+            <IconButton onClick={() => setPaused(!paused)} color={paused ? 'warning' : 'default'}>
               {paused ? <PlayArrowIcon /> : <PauseIcon />}
             </IconButton>
           </Tooltip>
           <Tooltip title={t('liveData.clearData')}>
-            <IconButton onClick={clearAll} size="small">
+            <IconButton onClick={clearAll}>
               <DeleteSweepIcon />
             </IconButton>
           </Tooltip>
         </Box>
-      </Box>
+        }
+      />
 
       {error && <Alert severity="warning" sx={{ mb: 2 }}>{error}</Alert>}
       {paused && <Alert severity="info" sx={{ mb: 2 }}>{t('liveData.pausedInfo')}</Alert>}
@@ -475,7 +475,7 @@ export default function LiveData() {
                 return (
                   <Grid item xs={12} sm={6} md={4} lg={3} key={s.key}>
                     <Card sx={{ height: '100%', opacity: stale ? 0.6 : 1 }}>
-                      <CardContent sx={{ pb: '12px !important' }}>
+                      <CardContent>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.5 }}>
                           <FiberManualRecordIcon sx={{ fontSize: 10 }} color={stale ? 'disabled' : 'success'} />
                           <Typography variant="caption" color="text.secondary" noWrap title={`${s.sourceId} · ${s.deviceId}`}>
@@ -483,7 +483,7 @@ export default function LiveData() {
                             {s.deviceId !== s.sourceId ? ` · ${s.deviceId}` : ''}
                           </Typography>
                         </Box>
-                        <Typography variant="body2" fontWeight={600} sx={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                        <Typography variant="body2" fontWeight={600} sx={{ fontFamily: MONO, wordBreak: 'break-all' }}>
                           {s.measId}
                         </Typography>
                         <Typography variant="h5" fontWeight={700} sx={{ mt: 0.5, wordBreak: 'break-all' }}>
@@ -530,12 +530,12 @@ export default function LiveData() {
                     {rawShown.map((item, idx) => (
                       <TableRow key={`${item.ts}-${idx}`} hover>
                         <TableCell>
-                          <Typography variant="caption" fontFamily="monospace" color="text.secondary">
+                          <Typography variant="caption" fontFamily={MONO} color="text.secondary">
                             {formatTime(item.ts)}
                           </Typography>
                         </TableCell>
                         <TableCell>
-                          <Typography variant="caption" fontFamily="monospace">{item.kind}</Typography>
+                          <Typography variant="caption" fontFamily={MONO}>{item.kind}</Typography>
                         </TableCell>
                         <TableCell>
                           {item.sourceId ? <Chip label={item.sourceId} size="small" variant="outlined" /> : '—'}
@@ -543,7 +543,7 @@ export default function LiveData() {
                         <TableCell>
                           <Typography
                             variant="caption"
-                            fontFamily="monospace"
+                            fontFamily={MONO}
                             sx={{ display: 'block', maxWidth: '55vw', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                             title={formatValue(item.body)}
                           >

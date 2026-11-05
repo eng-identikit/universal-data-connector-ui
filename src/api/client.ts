@@ -54,6 +54,9 @@ async function refreshTokens(): Promise<Tokens | null> {
     session.setTokens(next)
     return next
   } catch {
+    // Another tab may have refreshed meanwhile (refresh tokens are single use): adopt its tokens
+    const current = session.getTokens()
+    if (current && current.refreshToken !== tokens.refreshToken) return current
     session.setTokens(null)
     return null
   }
@@ -95,7 +98,14 @@ apiClient.interceptors.response.use(
 
     // Normalize error message
     const data = err.response?.data
-    const message = data?.message || data?.error || err.message || 'Unknown error'
+    const firstError = Array.isArray(data?.errors) ? data.errors[0] : undefined
+    const message =
+      data?.message ||
+      (typeof firstError === 'string' ? firstError : firstError?.message) ||
+      data?.testResult?.message ||
+      data?.error ||
+      err.message ||
+      'Unknown error'
     return Promise.reject(new ApiError(message, err.response?.status, data?.error, data?.details))
   },
 )
