@@ -1,7 +1,8 @@
 import { MONO } from '../../theme'
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
+import { useScopedNavigate } from '../../context/UdcScope'
 import {
   Box,
   Typography,
@@ -63,7 +64,7 @@ function AttrPreview({ entity }: { entity: Entity }) {
 
 export default function Entities() {
   const { t } = useTranslation()
-  const navigate = useNavigate()
+  const navigate = useScopedNavigate()
   const canWrite = useCan('operator')
   // Filters live in the URL so they survive navigation to an entity and back
   const [params, setParams] = useSearchParams()

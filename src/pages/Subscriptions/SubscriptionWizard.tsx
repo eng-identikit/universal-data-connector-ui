@@ -48,6 +48,7 @@ import {
   type Entity,
 } from '../../api/broker'
 import FilterEditor from './FilterEditor'
+import { useUdcScope } from '../../context/UdcScope'
 import TransformerPreview from '../../components/TransformerPreview'
 
 interface Form {
@@ -211,10 +212,15 @@ interface Props {
   subscription?: Subscription
   onClose: () => void
   onSaved: (sub: Subscription) => void
+  /** Channel preselected for a new subscription */
+  initialChannel?: Channel
+  /** Lets the user pick the tenant of a new subscription (board) */
+  chooseTenant?: boolean
 }
 
-export default function SubscriptionWizard({ open, subscription, onClose, onSaved }: Props) {
+export default function SubscriptionWizard({ open, subscription, onClose, onSaved, initialChannel, chooseTenant }: Props) {
   const { t } = useTranslation()
+  const scope = useUdcScope()
   const [step, setStep] = useState(0)
   const [form, setForm] = useState<Form>(EMPTY)
   const [types, setTypes] = useState<string[]>([])
@@ -243,12 +249,9 @@ export default function SubscriptionWizard({ open, subscription, onClose, onSave
   useEffect(() => {
     if (!open) return
     setStep(0)
-    setForm(subscription ? fromSubscription(subscription) : EMPTY)
+    setForm(subscription ? fromSubscription(subscription) : { ...EMPTY, ...(initialChannel && { channel: initialChannel }) })
     setPreview(null)
     setError(null)
-    getTypes()
-      .then((ts) => setTypes(ts.map((x) => x.type)))
-      .catch(() => setTypes([]))
     getBrokerHealth()
       .then((h) => h.defaultBrokers && setDefaultBrokers(h.defaultBrokers))
       .catch(() => {})
@@ -256,7 +259,15 @@ export default function SubscriptionWizard({ open, subscription, onClose, onSave
       .then(setTransformers)
       .catch(() => setTransformers([]))
     // Initialise once per opening: the parent may pass a fresh copy of the same subscription while polling
-  }, [open, subscription?.id])
+  }, [open, subscription?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Entity types of the tenant the subscription belongs to
+  useEffect(() => {
+    if (!open) return
+    getTypes()
+      .then((ts) => setTypes(ts.map((x) => x.type)))
+      .catch(() => setTypes([]))
+  }, [open, scope?.tenant])
 
   const set = <K extends keyof Form>(key: K, value: Form[K]) => setForm((f) => ({ ...f, [key]: value }))
 
@@ -340,6 +351,17 @@ export default function SubscriptionWizard({ open, subscription, onClose, onSave
 
         {step === 0 && (
           <Grid container spacing={2}>
+            {chooseTenant && !subscription && scope && scope.tenants.length > 1 && (
+              <Grid item xs={12}>
+                <TextField select label={t('admin.tenant')} value={scope.tenant ?? ''} onChange={(e) => scope.setTenant(e.target.value)} fullWidth size="small">
+                  {scope.tenants.map((tn) => (
+                    <MenuItem key={tn.id} value={tn.id}>
+                      {tn.name}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+            )}
             <Grid item xs={12} sm={6}>
               <TextField label={t('common.name')} value={form.name} onChange={(e) => set('name', e.target.value)} fullWidth size="small" required autoFocus />
             </Grid>

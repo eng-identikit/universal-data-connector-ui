@@ -29,7 +29,7 @@ import RefreshIcon from '@mui/icons-material/Refresh'
 import StatusChip from '../../components/StatusChip'
 import PageHeader from '../../components/PageHeader'
 import { CodeTag } from '../../components/Code'
-import { useAuth } from '../../context/AuthContext'
+import { useCan } from '../../context/AuthContext'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import ConnectorDialog from './ConnectorDialog'
 import { getSources, startSource, stopSource, restartSource, deleteSource, updateSource, reloadSources } from '../../api/endpoints'
@@ -38,7 +38,7 @@ import type { Source } from '../../api/types'
 export default function Connectors() {
   const { t } = useTranslation()
   // Connector configuration is global infrastructure: only a superadmin may change it
-  const canManage = !!useAuth().user?.isSuperadmin
+  const canManage = useCan('operator')
 
   const [sources, setSources] = useState<Source[]>([])
   const [loading, setLoading] = useState(true)

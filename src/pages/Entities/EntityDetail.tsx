@@ -1,7 +1,9 @@
 import { MONO } from '../../theme'
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate, useParams, Link as RouterLink } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
+import RouterLink from '../../components/ScopedLink'
+import { useScopedNavigate } from '../../context/UdcScope'
 import {
   Box,
   Typography,
@@ -110,7 +112,7 @@ function RelationTree({ graph, root, direction }: { graph: EntityGraph; root: st
 
 export default function EntityDetail() {
   const { t } = useTranslation()
-  const navigate = useNavigate()
+  const navigate = useScopedNavigate()
   const { id = '' } = useParams()
   const canWrite = useCan('operator')
   const [entity, setEntity] = useState<Entity | null>(null)

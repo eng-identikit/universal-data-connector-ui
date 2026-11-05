@@ -1,7 +1,7 @@
 import { MONO } from '../../theme'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { useScopedNavigate } from '../../context/UdcScope'
 import {
   Box,
   Typography,
@@ -43,7 +43,7 @@ const REFRESH_MS = 5000
 
 export default function Subscriptions() {
   const { t } = useTranslation()
-  const navigate = useNavigate()
+  const navigate = useScopedNavigate()
   const canWrite = useCan('operator')
   const [subs, setSubs] = useState<Subscription[] | null>(null)
   const [error, setError] = useState<string | null>(null)

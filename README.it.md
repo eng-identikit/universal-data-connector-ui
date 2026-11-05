@@ -4,41 +4,56 @@
 
 ## Panoramica
 
-Interfaccia web per il context broker [Universal Data Connector](../universal-data-connector/README.it.md) (UDC). Dal browser puoi:
-- consultare e modificare le entità, in tabella o su mappa;
-- gestire le subscription, seguire lo storico degli attributi e inviare comandi ai dispositivi;
-- configurare i connettori e amministrare tenant, utenti, API key e cluster.
+Orchestratore web delle istanze [Universal Data Connector](../universal-data-connector/README.it.md) (UDC). Dopo il login si apre una **lavagna** in stile NiFi / Node-RED con tutte le istanze registrate:
+- ogni UDC è un blocco centrale con il suo stato;
+- a sinistra ci sono le **sorgenti** (connettori: OPC UA, MQTT, Modbus, S7, HTTP...);
+- a destra ci sono le **destinazioni**: subscription HTTP, MQTT, NATS o WebSocket, con il transformer indicato sul collegamento, e l'endpoint **MCP** per gli LLM.
 
-Realizzata con **React 18 + TypeScript**, **Vite**, **Material UI (MUI v5)**, **Recharts** e **Leaflet**.
+Aggiungere, modificare o eliminare un blocco cambia la configurazione dell'istanza.
+
+La UI parla solo con il suo backend, [universal-data-connector-ui-api](../universal-data-connector-ui-api/README.it.md). Il backend tiene il catalogo delle istanze e la posizione dei blocchi, autentica gli utenti (locali o Keycloak) e raggiunge ogni UDC con una chiave di servizio.
+
+Realizzata con **React 18 + TypeScript**, **Vite**, **Material UI (MUI v5)**, **React Flow**, **Recharts** e **Leaflet**.
 
 ## 🎯 Funzionalità
 
-- **Login e tenant**: sessione JWT con rinnovo automatico, selettore del tenant nella barra in alto, pagine che si adattano al ruolo (viewer, operator, admin, superadmin).
+**Lavagna**
+- **Istanze UDC**: un blocco per ogni istanza registrata, con raggiungibilità, validità della chiave, modalità cluster e numero di sorgenti, destinazioni e tenant. Gli admin registrano nuove istanze in due modi: con URL e chiave di servizio, oppure con le credenziali di un superadmin dell'UDC, usate una sola volta e mai salvate. Gli admin possono anche modificarle o rimuoverle.
+- **Palette dei blocchi**: si trascina un connettore o un canale vicino a un UDC (oppure si seleziona un UDC e si fa clic sul blocco). Si apre il modulo del connettore o il wizard della subscription, e il blocco resta dove è stato lasciato.
+- **Pannello di dettaglio** del blocco selezionato:
+  - sorgente: stato, replica del cluster che la esegue, statistiche e configurazione (i segreti sono mascherati per i lettori), più avvio, arresto, riavvio, modifica ed eliminazione;
+  - destinazione: target, tenant, transformer, statistiche di consegna e ultimo errore, più modifica, pausa/ripresa ed eliminazione;
+  - MCP: URL da dare ai client e tool disponibili.
+- **Layout**: spostando un UDC si spostano anche i suoi blocchi; le posizioni sono salvate per tutti.
+- **Stato in tempo reale**: la lavagna si aggiorna ogni 15 secondi. Un collegamento animato indica un flusso attivo, uno rosso un errore, uno tratteggiato un blocco disattivato.
+
+**Istanza** (pulsante "Apri istanza" sul blocco UDC): le pagine di dettaglio di un'istanza, con selettore del tenant.
 - **Dashboard**: numeri del broker per il tenant (entità, subscription, consegne, DLQ) e stato del motore.
-- **Entità**: tabella con filtri (tipo, pattern dell'id, collegate a, profondità, direzione, ordinamento) e vista **mappa** dell'area visibile. Creazione da modulo o da JSON.
-- **Dettaglio entità**:
-  - attributi, con un editor per tipo, metadata e configurazione del comando;
-  - grafici dello **storico** (media con banda min–max, esportazione CSV, vista tabella);
-  - alberi delle relazioni in entrambe le direzioni;
-  - **posizione** sulla mappa, impostabile con un clic;
-  - **comandi** agli attributi scrivibili, con il loro stato;
-  - il JSON completo.
-- **Subscription**:
-  - elenco con stato e statistiche;
-  - wizard in 4 passi (entità con anteprima, trigger con deadband/throttling/invio periodico, filtro con costruttore visuale e validazione lato server, canale e formato in uscita);
-  - dettaglio con test, pausa/ripresa, DLQ con reinvio e svuotamento, e notifiche live per le subscription websocket.
-- **Transformer**: libreria dei formati di uscita (espressioni JSONata in `config/transformers.json`), con editor e anteprima su entità reali; nel wizard si sceglie un transformer della libreria o se ne scrive uno solo per la subscription.
-- **Storico**: storico degli attributi di qualsiasi entità.
-- **Dati Live**: grafici e valori in tempo reale dallo stream autenticato del broker.
-- **Connettori / Mapping / Archiviazione**: configurazione dei connettori (compresi tenant di destinazione e prefisso dell'id entità), dispositivi mappati e buffer dei dati grezzi.
-- **Amministrazione**: membri del tenant, API key (mostrate una sola volta), tenant e utenti (superadmin), **sessioni attive** (chi è collegato, da dove e con quale client, revoca di una sessione o di tutte quelle di un utente), **storico accessi** (login riusciti, falliti e bloccati, logout, revoche), **accesso LLM (MCP)** (API key per l'assistente e configurazione pronta per Claude Code, Claude Desktop, VS Code) e **cluster** (istanze, partizioni, connettori, ritardo dell'event loop, backlog delle code).
-- **Le mie sessioni**: dal menu utente ognuno vede i propri accessi e chiude quelli che non riconosce.
-- **Impostazioni**: URL dell'API, tile server della mappa, lingua (IT/EN) e tema.
+- **Entità**:
+  - tabella con filtri e vista **mappa**;
+  - dettaglio con attributi, **storico**, relazioni, posizione, **comandi** e JSON;
+  - creazione da modulo o da JSON.
+- **Subscription**: elenco, wizard in 4 passi (entità, trigger, filtro, canale e formato in uscita), dettaglio con test, pausa, DLQ e notifiche live.
+- **Transformer**: libreria dei formati di uscita (JSONata), con editor e anteprima su entità reali.
+- **Storico**, **Dati live**, **Connettori**, **Mapping**, **Archiviazione**.
+- **Amministrazione** (admin): membri e API key del tenant, accesso LLM (MCP), tenant, utenti dell'istanza, sessioni attive, storico accessi e cluster.
+
+**Utenti della UI** (menu utente, admin, login locale): creazione, ruolo, disattivazione ed eliminazione.
+
+| Ruolo | Può |
+|---|---|
+| Lettore | Vedere la lavagna e le istanze; i segreti sono mascherati |
+| Operatore | Aggiungere, modificare e togliere sorgenti e destinazioni, spostare i blocchi, scrivere entità |
+| Admin | Registrare le istanze, gestire gli utenti della UI e, su ogni istanza, tenant, utenti e chiavi |
+
+Con Keycloak i ruoli vengono dai ruoli di realm (vedi il README di ui-api).
+
+Dal menu utente si cambiano anche la password (login locale), il tile server della mappa, la lingua (IT/EN) e il tema.
 
 ## 📋 Requisiti
 
 - Node.js 18+
-- Un backend UDC in esecuzione (`docker compose up -d` nel repo del backend avvia tutto, compresa questa UI, su http://localhost:8080)
+- universal-data-connector-ui-api in esecuzione. Con `docker compose up -d` nel repo `universal-data-connector` partono UDC, ui-api e questa UI su http://localhost:8080.
 
 ## 🚀 Avvio
 
@@ -47,7 +62,7 @@ npm install
 npm run dev        # http://localhost:5173
 ```
 
-Il server di sviluppo Vite inoltra `/api` (compreso lo stream WebSocket) e `/health` a `http://localhost:3000`, quindi l'URL dell'API nelle Impostazioni può restare vuoto (stessa origine).
+Il server di sviluppo Vite inoltra `/api` (compreso lo stream WebSocket) a ui-api su `http://localhost:9000`.
 
 ### Produzione
 
@@ -55,31 +70,33 @@ Il server di sviluppo Vite inoltra `/api` (compreso lo stream WebSocket) e `/hea
 npm run build      # type-check e build in dist/
 ```
 
-Il `Dockerfile` serve la build con nginx e inoltra `/api` e `/api/v1/stream` a `${UDC_BACKEND}` (predefinito `udc:3000`, impostato da Compose e dal chart Helm).
+Il `Dockerfile` serve la build con nginx e inoltra `/api` (con l'upgrade WebSocket per lo stream) a `${UI_API_BACKEND}`. Il valore predefinito è `ui-api:9000`; Compose e il chart Helm lo impostano.
 
 ## 📁 Struttura del progetto
 
 ```
 src/
 ├── api/
-│   ├── client.ts         # Istanza Axios: base URL, token, X-Tenant, refresh su 401, URL dello stream
-│   ├── session.ts        # Token e tenant selezionato in localStorage
-│   ├── broker.ts         # API del broker: entità, subscription, storico, comandi, amministrazione, cluster
-│   ├── endpoints.ts      # API di sistema (/api/v1/system): stato, sorgenti, mapping, storage
-│   └── types.ts
-├── components/           # Layout (sidebar, barra in alto, menu utente), EntityHistory, EntityMap, dialog
-├── context/              # AppContext (tema, lingua, URL API), AuthContext (sessione, tenant, ruolo)
-├── hooks/                # useBrokerStream (WebSocket autenticato), useUDCStatus
-├── i18n/locales/         # it.json, en.json
-└── pages/                # Login, Dashboard, Entities, Subscriptions, History, LiveData,
-                          # Connectors, Mapping, Storage, Admin, Settings
+│   ├── auth.ts           # Login locale (coppia di token) o Keycloak (keycloak-js), rinnovo
+│   ├── client.ts         # bffClient (ui-api) e apiClient (un'istanza UDC tramite il proxy di ui-api)
+│   ├── bff.ts            # API di ui-api: utenti, catalogo UDC, flusso, layout, blocchi
+│   ├── broker.ts         # API dell'istanza: entità, subscription, storico, comandi, amministrazione
+│   ├── endpoints.ts      # API di sistema dell'istanza (/system): sorgenti, mapping, storage
+│   └── session.ts
+├── context/              # AppContext (tema, lingua), AuthContext (utente della UI), UdcScope (istanza e tenant)
+├── pages/
+│   ├── Board/            # lavagna: grafo, nodi, palette, pannello di dettaglio, registrazione UDC
+│   ├── Users/            # utenti della UI
+│   └── ...               # pagine di un'istanza: Dashboard, Entities, Subscriptions, Transformers,
+│                         # History, LiveData, Connectors, Mapping, Storage, Admin
+├── components/ hooks/ i18n/ theme/
 ```
 
-## 🔌 API del backend
+## 🔌 API
 
-- **API del broker** (`/api/v1`): vedi la [guida al broker](../universal-data-connector/docs/Broker.it.md).
-- **API di sistema** (`/api/v1/system`): vedi la [documentazione API](../universal-data-connector/docs/API.it.md).
-- **Dati live**: `ws(s)://<host>/api/v1/stream?access_token=…&tenant=…`. Alla chiusura con codice `4001` (token scaduto) la UI rinnova il token e si riconnette.
+- **ui-api** (`/api/v1/basic`, `/api/v1/auth`): vedi il [README di ui-api](../universal-data-connector-ui-api/README.it.md).
+- **Un'istanza**: le pagine chiamano l'API dell'UDC ([guida al broker](../universal-data-connector/docs/Broker.it.md)) tramite `/api/v1/auth/udc/<id>/proxy/...`. Il tenant passa come `X-Tenant`.
+- **Dati live**: `ws(s)://<host>/api/v1/auth/udc/<id>/stream?access_token=…&tenant=…`. ui-api lo collega allo stream dell'istanza. Alla chiusura con codice `4001` la UI rinnova il token e si riconnette.
 
 ## 🛠️ Stack tecnologico
 
@@ -88,12 +105,10 @@ src/
 | Framework UI | React 18 + TypeScript |
 | Build | Vite 5 |
 | Componenti | Material UI (MUI) v5 + Emotion |
+| Lavagna | React Flow (@xyflow/react) |
+| Login Keycloak | keycloak-js |
 | Routing | React Router v6 |
 | Client HTTP | Axios |
 | Grafici | Recharts |
 | Mappe | Leaflet + react-leaflet |
 | i18n | i18next + react-i18next |
-
----
-
-**Universal Data Connector UI** - Industry 5.0 Ready 🚀

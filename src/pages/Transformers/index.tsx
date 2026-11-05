@@ -28,7 +28,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility'
 import DeleteIcon from '@mui/icons-material/Delete'
 import { deleteTransformer, listTransformers, saveTransformer, type Transformer } from '../../api/broker'
 import { ApiError } from '../../api/client'
-import { useAuth } from '../../context/AuthContext'
+import { useCan } from '../../context/AuthContext'
 import PageHeader from '../../components/PageHeader'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import TransformerPreview from '../../components/TransformerPreview'
@@ -49,8 +49,7 @@ const EMPTY: Form = { id: '', name: '', description: '', expression: '' }
 /** Library of output transformers (config/transformers.json) used by subscriptions. */
 export default function Transformers() {
   const { t } = useTranslation()
-  const { user } = useAuth()
-  const canEdit = !!user?.isSuperadmin
+  const canEdit = useCan('operator')
   const [items, setItems] = useState<Transformer[]>([])
   const [error, setError] = useState<string | null>(null)
   const [editing, setEditing] = useState<{ existing?: Transformer } | null>(null)

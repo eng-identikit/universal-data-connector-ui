@@ -8,13 +8,16 @@ import AccountTreeIcon from '@mui/icons-material/AccountTree'
 import StorageIcon from '@mui/icons-material/Storage'
 import StreamIcon from '@mui/icons-material/Stream'
 import TimelineIcon from '@mui/icons-material/Timeline'
-import SettingsIcon from '@mui/icons-material/Settings'
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import HubIcon from '@mui/icons-material/Hub'
 import CategoryIcon from '@mui/icons-material/Category'
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive'
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings'
 import TransformIcon from '@mui/icons-material/Transform'
-import { useAuth, useCan } from '../../context/AuthContext'
+import { useEffect, useState } from 'react'
+import { useCan } from '../../context/AuthContext'
+import { useUdcScope } from '../../context/UdcScope'
+import { getUdc } from '../../api/bff'
 
 const navItems = [
   { path: '/', labelKey: 'nav.dashboard', icon: <DashboardIcon fontSize="small" /> },
@@ -43,9 +46,13 @@ export default function Sidebar() {
   const { t } = useTranslation()
   const location = useLocation()
   const navigate = useNavigate()
-  const { user } = useAuth()
-  const isTenantAdmin = useCan('admin')
-  const items = isTenantAdmin || user?.isSuperadmin
+  const scope = useUdcScope()
+  const [name, setName] = useState<string | null>(null)
+  useEffect(() => {
+    if (scope) getUdc(scope.udcId).then((u) => setName(u.name)).catch(() => setName(null))
+  }, [scope?.udcId])
+  const path = (p: string) => (scope ? scope.path(p) : p)
+  const items = useCan('admin')
     ? [...navItems, { path: '/admin', labelKey: 'nav.admin', icon: <AdminPanelSettingsIcon fontSize="small" /> }]
     : navItems
 
@@ -66,12 +73,12 @@ export default function Sidebar() {
         >
           <HubIcon sx={{ fontSize: 20 }} />
         </Box>
-        <Box>
-          <Typography variant="subtitle2" fontWeight={700} lineHeight={1.2}>
-            Universal Data
+        <Box sx={{ minWidth: 0 }}>
+          <Typography variant="subtitle2" fontWeight={700} lineHeight={1.2} noWrap>
+            {name ?? 'UDC'}
           </Typography>
           <Typography variant="caption" color="text.secondary" lineHeight={1.2}>
-            Connector UI
+            Universal Data Connector
           </Typography>
         </Box>
       </Box>
@@ -83,22 +90,17 @@ export default function Sidebar() {
             key={item.path}
             icon={item.icon}
             label={t(item.labelKey)}
-            active={item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path)}
-            onClick={() => navigate(item.path)}
+            active={item.path === '/' ? location.pathname === path('/') : location.pathname.startsWith(path(item.path))}
+            onClick={() => navigate(path(item.path))}
           />
         ))}
       </List>
 
       <Divider />
 
-      {/* Settings at bottom */}
+      {/* Back to the board of all instances */}
       <List sx={{ px: 1.5, py: 1.5 }}>
-        <NavItem
-          icon={<SettingsIcon fontSize="small" />}
-          label={t('nav.settings')}
-          active={location.pathname === '/settings'}
-          onClick={() => navigate('/settings')}
-        />
+        <NavItem icon={<ArrowBackIcon fontSize="small" />} label={t('board.back')} active={false} onClick={() => navigate('/')} />
       </List>
     </Box>
   )

@@ -6,8 +6,6 @@ interface AppContextType {
   toggleTheme: () => void
   language: string
   setLanguage: (lang: string) => void
-  apiBaseUrl: string
-  setApiBaseUrl: (url: string) => void
 }
 
 const AppContext = createContext<AppContextType>({} as AppContextType)
@@ -18,9 +16,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   )
   const [language, setLanguageState] = useState(
     () => localStorage.getItem('udc-language') || 'it',
-  )
-  const [apiBaseUrl, setApiBaseUrlState] = useState(
-    () => localStorage.getItem('udc-api-url') || '',
   )
 
   // Sync i18n language on mount
@@ -40,17 +35,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     i18n.changeLanguage(lang)
   }
 
-  const setApiBaseUrl = (url: string) => {
-    setApiBaseUrlState(url)
-    // Empty = same origin
-    if (url) localStorage.setItem('udc-api-url', url)
-    else localStorage.removeItem('udc-api-url')
-  }
-
   return (
-    <AppContext.Provider
-      value={{ themeMode, toggleTheme, language, setLanguage, apiBaseUrl, setApiBaseUrl }}
-    >
+    <AppContext.Provider value={{ themeMode, toggleTheme, language, setLanguage }}>
       {children}
     </AppContext.Provider>
   )

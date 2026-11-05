@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
+import { useScopedNavigate } from '../../context/UdcScope'
 import {
   Box,
   Typography,
@@ -107,7 +108,7 @@ function NotificationRow({ n, extra }: { n: Notification; extra?: React.ReactNod
 
 export default function SubscriptionDetail() {
   const { t } = useTranslation()
-  const navigate = useNavigate()
+  const navigate = useScopedNavigate()
   const { id = '' } = useParams()
   const canWrite = useCan('operator')
   const [sub, setSub] = useState<Subscription | null>(null)

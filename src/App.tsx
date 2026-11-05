@@ -1,12 +1,15 @@
 import { useMemo } from 'react'
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom'
 import { ThemeProvider, CssBaseline, Box, CircularProgress } from '@mui/material'
 import { createAppTheme } from './theme'
 import { AppProvider, useAppContext } from './context/AppContext'
-import { AuthProvider, useAuth } from './context/AuthContext'
+import { AuthProvider, usePrincipal } from './context/AuthContext'
+import { UdcScopeProvider, useUdcScope } from './context/UdcScope'
 import AppLayout from './components/Layout/AppLayout'
 import ErrorBoundary from './components/ErrorBoundary'
 import Login from './pages/Login'
+import Board from './pages/Board'
+import UiUsers from './pages/Users'
 import Dashboard from './pages/Dashboard'
 import Entities from './pages/Entities'
 import EntityDetail from './pages/Entities/EntityDetail'
@@ -18,45 +21,65 @@ import Mapping from './pages/Mapping'
 import Storage from './pages/Storage'
 import LiveData from './pages/LiveData'
 import History from './pages/History'
-import Settings from './pages/Settings'
 import Transformers from './pages/Transformers'
 
-function AuthenticatedApp() {
-  const { user, tenant } = useAuth()
+/** Pages of one UDC instance, reached from its block on the board. */
+function WorkspaceRoutes() {
+  const scope = useUdcScope()
   const location = useLocation()
+  return (
+    <AppLayout>
+      {/* A crashing page shows an error in place; navigating elsewhere clears it */}
+      <ErrorBoundary resetKey={location.pathname}>
+        {/* Remount pages on tenant switch so they refetch tenant-scoped data */}
+        <Routes key={scope?.tenant ?? 'none'}>
+          <Route index element={<Dashboard />} />
+          <Route path="entities" element={<Entities />} />
+          <Route path="entities/:id" element={<EntityDetail />} />
+          <Route path="subscriptions" element={<Subscriptions />} />
+          <Route path="subscriptions/:id" element={<SubscriptionDetail />} />
+          <Route path="transformers" element={<Transformers />} />
+          <Route path="admin" element={<Admin />} />
+          <Route path="connectors" element={<Connectors />} />
+          <Route path="mapping" element={<Mapping />} />
+          <Route path="storage" element={<Storage />} />
+          <Route path="live-data" element={<LiveData />} />
+          <Route path="history" element={<History />} />
+          <Route path="*" element={<Navigate to={scope ? scope.path('/') : '/'} replace />} />
+        </Routes>
+      </ErrorBoundary>
+    </AppLayout>
+  )
+}
 
-  if (user === undefined) {
+function Workspace() {
+  const { udcId = '' } = useParams()
+  return (
+    <UdcScopeProvider key={udcId} udcId={udcId}>
+      <WorkspaceRoutes />
+    </UdcScopeProvider>
+  )
+}
+
+function AuthenticatedApp() {
+  const { principal } = usePrincipal()
+
+  if (principal === undefined) {
     return (
       <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <CircularProgress />
       </Box>
     )
   }
-  if (!user) return <Login />
+  if (!principal) return <Login />
 
   return (
-    <AppLayout>
-      {/* A crashing page shows an error in place; navigating elsewhere clears it */}
-      <ErrorBoundary resetKey={location.pathname}>
-        {/* Remount pages on tenant switch so they refetch tenant-scoped data */}
-        <Routes key={tenant ?? 'none'}>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/entities" element={<Entities />} />
-          <Route path="/entities/:id" element={<EntityDetail />} />
-          <Route path="/subscriptions" element={<Subscriptions />} />
-          <Route path="/subscriptions/:id" element={<SubscriptionDetail />} />
-          <Route path="/transformers" element={<Transformers />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/connectors" element={<Connectors />} />
-          <Route path="/mapping" element={<Mapping />} />
-          <Route path="/storage" element={<Storage />} />
-          <Route path="/live-data" element={<LiveData />} />
-          <Route path="/history" element={<History />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </ErrorBoundary>
-    </AppLayout>
+    <Routes>
+      <Route path="/" element={<Board />} />
+      <Route path="/users" element={principal.role === 'admin' && principal.source === 'local' ? <UiUsers /> : <Navigate to="/" replace />} />
+      <Route path="/udc/:udcId/*" element={<Workspace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   )
 }
 

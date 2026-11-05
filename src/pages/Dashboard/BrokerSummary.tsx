@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { useScopedNavigate } from '../../context/UdcScope'
 import { Grid, useTheme } from '@mui/material'
 import CategoryIcon from '@mui/icons-material/Category'
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive'
@@ -25,7 +25,7 @@ interface Summary {
 export default function BrokerSummary() {
   const { t } = useTranslation()
   const theme = useTheme()
-  const navigate = useNavigate()
+  const navigate = useScopedNavigate()
   const [s, setS] = useState<Summary | null>(null)
 
   useEffect(() => {

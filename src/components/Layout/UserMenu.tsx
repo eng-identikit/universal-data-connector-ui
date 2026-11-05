@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import {
   Button,
   Menu,
@@ -19,10 +20,13 @@ import {
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import LogoutIcon from '@mui/icons-material/Logout'
 import KeyIcon from '@mui/icons-material/Key'
-import DevicesIcon from '@mui/icons-material/Devices'
-import { useAuth } from '../../context/AuthContext'
-import { changePassword, listMySessions, revokeMySession, type Session } from '../../api/broker'
-import SessionsTable from '../SessionsTable'
+import GroupIcon from '@mui/icons-material/Group'
+import OpenInNewIcon from '@mui/icons-material/OpenInNew'
+import MapIcon from '@mui/icons-material/Map'
+import { getTileUrl } from '../EntityMap'
+import { usePrincipal } from '../../context/AuthContext'
+import { changeMyPassword } from '../../api/bff'
+import { auth } from '../../api/auth'
 import { session } from '../../api/session'
 
 function ChangePasswordDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -48,9 +52,9 @@ function ChangePasswordDialog({ open, onClose }: { open: boolean; onClose: () =>
     }
     try {
       setError(null)
-      const s = await changePassword(current, next)
-      // The change revokes old tokens: switch to the new pair
-      session.setTokens({ accessToken: s.accessToken, refreshToken: s.refreshToken })
+      const res = await changeMyPassword(current, next)
+      // The change invalidates older tokens: switch to the new pair
+      session.setTokens({ accessToken: res.data.accessToken, refreshToken: res.data.refreshToken })
       setDone(true)
     } catch (err) {
       setError((err as Error).message)
@@ -90,66 +94,52 @@ function ChangePasswordDialog({ open, onClose }: { open: boolean; onClose: () =>
   )
 }
 
-function MySessionsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+function MapTilesDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useTranslation()
-  const { logout } = useAuth()
-  const [sessions, setSessions] = useState<Session[]>([])
-  const [error, setError] = useState<string | null>(null)
-
-  const load = useCallback(async () => {
+  const [tiles, setTiles] = useState(getTileUrl())
+  const save = (url: string) => {
     try {
-      setError(null)
-      setSessions(await listMySessions())
-    } catch (err) {
-      setError((err as Error).message)
+      if (url.trim()) localStorage.setItem('udc-map-tiles', url.trim())
+      else localStorage.removeItem('udc-map-tiles')
+    } catch {
+      // storage unavailable: keep the default tiles
     }
-  }, [])
-
-  useEffect(() => {
-    if (open) load()
-  }, [open, load])
-
-  const revoke = async (s: Session) => {
-    if (s.current) return logout()
-    try {
-      await revokeMySession(s.id)
-      await load()
-    } catch (err) {
-      setError((err as Error).message)
-    }
+    onClose()
   }
-
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>{t('sessions.mine')}</DialogTitle>
+    <Dialog open={open} onClose={onClose} TransitionProps={{ onEnter: () => setTiles(getTileUrl()) }} maxWidth="sm" fullWidth>
+      <DialogTitle>{t('settings.mapTiles')}</DialogTitle>
       <DialogContent>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          {t('sessions.mineHelp')}
-        </Typography>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-        <SessionsTable sessions={sessions} onRevoke={revoke} />
+        <TextField value={tiles} onChange={(e) => setTiles(e.target.value)} fullWidth size="small" helperText={t('settings.mapTilesHelp')} sx={{ mt: 1 }} />
       </DialogContent>
       <DialogActions>
+        <Button color="inherit" onClick={() => save('')}>
+          {t('settings.resetDefaults')}
+        </Button>
+        <Box sx={{ flexGrow: 1 }} />
         <Button onClick={onClose} color="inherit">
-          {t('common.close')}
+          {t('common.cancel')}
+        </Button>
+        <Button variant="contained" onClick={() => save(tiles)}>
+          {t('common.save')}
         </Button>
       </DialogActions>
     </Dialog>
   )
 }
 
+/** The UI user: role, own password (local login) or Keycloak account, UI users (admin), logout. */
 export default function UserMenu() {
   const { t } = useTranslation()
-  const { user, role, logout } = useAuth()
+  const navigate = useNavigate()
+  const { principal, logout } = usePrincipal()
   const [anchor, setAnchor] = useState<HTMLElement | null>(null)
   const [passwordOpen, setPasswordOpen] = useState(false)
-  const [sessionsOpen, setSessionsOpen] = useState(false)
+  const [tilesOpen, setTilesOpen] = useState(false)
 
-  if (!user) return null
+  if (!principal) return null
+  const local = principal.source === 'local'
+  const accountUrl = auth.accountUrl()
 
   return (
     <>
@@ -160,40 +150,66 @@ export default function UserMenu() {
         onClick={(e) => setAnchor(e.currentTarget)}
         sx={{ textTransform: 'none' }}
       >
-        {user.displayName || user.username}
+        {principal.displayName || principal.username}
       </Button>
       <Menu anchorEl={anchor} open={!!anchor} onClose={() => setAnchor(null)}>
         <Box sx={{ px: 2, py: 1 }}>
           <Typography variant="body2" fontWeight={600}>
-            {user.username}
+            {principal.username}
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            {user.isSuperadmin ? 'superadmin' : role ? t(`roles.${role}`) : '—'}
+            {t(`roles.${principal.role}`)}
+            {!local && ' · Keycloak'}
           </Typography>
         </Box>
         <Divider />
+        {local && principal.role === 'admin' && (
+          <MenuItem
+            onClick={() => {
+              setAnchor(null)
+              navigate('/users')
+            }}
+          >
+            <ListItemIcon>
+              <GroupIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>{t('uiUsers.title')}</ListItemText>
+          </MenuItem>
+        )}
+        {local ? (
+          <MenuItem
+            onClick={() => {
+              setAnchor(null)
+              setPasswordOpen(true)
+            }}
+          >
+            <ListItemIcon>
+              <KeyIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>{t('userMenu.changePassword')}</ListItemText>
+          </MenuItem>
+        ) : (
+          accountUrl && (
+            <MenuItem component="a" href={accountUrl} target="_blank" rel="noreferrer" onClick={() => setAnchor(null)}>
+              <ListItemIcon>
+                <OpenInNewIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>{t('userMenu.account')}</ListItemText>
+            </MenuItem>
+          )
+        )}
         <MenuItem
           onClick={() => {
             setAnchor(null)
-            setPasswordOpen(true)
+            setTilesOpen(true)
           }}
         >
           <ListItemIcon>
-            <KeyIcon fontSize="small" />
+            <MapIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>{t('userMenu.changePassword')}</ListItemText>
+          <ListItemText>{t('settings.mapTiles')}</ListItemText>
         </MenuItem>
-        <MenuItem
-          onClick={() => {
-            setAnchor(null)
-            setSessionsOpen(true)
-          }}
-        >
-          <ListItemIcon>
-            <DevicesIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>{t('sessions.mine')}</ListItemText>
-        </MenuItem>
+        <Divider />
         <MenuItem onClick={logout}>
           <ListItemIcon>
             <LogoutIcon fontSize="small" />
@@ -202,7 +218,7 @@ export default function UserMenu() {
         </MenuItem>
       </Menu>
       <ChangePasswordDialog open={passwordOpen} onClose={() => setPasswordOpen(false)} />
-      <MySessionsDialog open={sessionsOpen} onClose={() => setSessionsOpen(false)} />
+      <MapTilesDialog open={tilesOpen} onClose={() => setTilesOpen(false)} />
     </>
   )
 }

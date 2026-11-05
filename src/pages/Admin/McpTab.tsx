@@ -16,7 +16,8 @@ import {
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import KeyIcon from '@mui/icons-material/Key'
 import { createApiKey, getMcpInfo, getTypes, type McpInfo } from '../../api/broker'
-import { getBaseUrl } from '../../api/client'
+import { getUdc } from '../../api/bff'
+import { useUdcScope } from '../../context/UdcScope'
 import { CodeBlock, CodeTag } from '../../components/Code'
 
 type Client = 'claudeCode' | 'stdio' | 'vscode' | 'http'
@@ -70,7 +71,13 @@ export default function McpTab({ tenant }: { tenant: string }) {
       .catch(() => setTypes([]))
   }, [])
 
-  const url = useMemo(() => `${getBaseUrl() || window.location.origin}${info?.path ?? '/api/v1/mcp'}`, [info])
+  // LLM clients reach the instance directly: its public URL when set
+  const scope = useUdcScope()
+  const [origin, setOrigin] = useState(window.location.origin)
+  useEffect(() => {
+    if (scope) getUdc(scope.udcId).then((u) => setOrigin(u.publicUrl || u.url)).catch(() => {})
+  }, [scope?.udcId]) // eslint-disable-line react-hooks/exhaustive-deps
+  const url = useMemo(() => `${origin}${info?.path ?? '/api/v1/mcp'}`, [origin, info])
   const text = snippet(client, url, key ?? KEY_PLACEHOLDER)
 
   const generate = async () => {

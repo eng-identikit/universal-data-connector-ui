@@ -20,7 +20,7 @@ import {
 import { createSource, updateSource, reloadSources } from '../../api/endpoints'
 import type { Source } from '../../api/types'
 
-const CONNECTOR_TYPES = [
+export const CONNECTOR_TYPES = [
   'opcua',
   'mqtt',
   'modbus',
@@ -93,10 +93,12 @@ interface ConnectorDialogProps {
   open: boolean
   source: Source | null
   onClose: () => void
-  onSaved: () => void
+  onSaved: (source: { id: string }) => void
+  /** Connector type preselected for a new source */
+  initialType?: string
 }
 
-export default function ConnectorDialog({ open, source, onClose, onSaved }: ConnectorDialogProps) {
+export default function ConnectorDialog({ open, source, onClose, onSaved, initialType }: ConnectorDialogProps) {
   const { t } = useTranslation()
   const isEdit = !!source
 
@@ -124,17 +126,18 @@ export default function ConnectorDialog({ open, source, onClose, onSaved }: Conn
         setTagsInput(source.tags?.join(', ') ?? '')
       } else {
         setId('')
-        setType('opcua')
+        const initial = initialType ?? 'opcua'
+        setType(initial)
         setEnabled(true)
         setTenant(currentTenant ?? 'default')
         setEntityIdPrefix('')
-        setConfigJson(JSON.stringify(TYPE_DEFAULTS['opcua'], null, 2))
+        setConfigJson(JSON.stringify(TYPE_DEFAULTS[initial] ?? {}, null, 2))
         setTagsInput('')
       }
       setJsonError(null)
       setError(null)
     }
-  }, [open, source])
+  }, [open, source]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleTypeChange = (newType: string) => {
     setType(newType)
@@ -187,7 +190,7 @@ export default function ConnectorDialog({ open, source, onClose, onSaved }: Conn
       }
       // Saving only writes sources.json: reload so the engine (re)starts the connector
       await reloadSources()
-      onSaved()
+      onSaved({ id: payload.id })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Save failed')
     } finally {

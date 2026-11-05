@@ -1,86 +1,113 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
+import { auth, type AuthConfig } from '../api/auth'
 import { session } from '../api/session'
-import { getMe, login as apiLogin, logoutSession, type Me, type Role } from '../api/broker'
+import { getMe, type Principal } from '../api/bff'
+import type { Me, Role } from '../api/broker'
+import { useUdcScope } from './UdcScope'
 
-interface AuthContextType {
+interface PrincipalContextType {
   /** null while unauthenticated; undefined while the stored session is being checked */
-  user: Me | null | undefined
-  tenant: string | null
-  /** Caller's role on the selected tenant */
-  role: Role | null
+  principal: Principal | null | undefined
+  config: AuthConfig | null
+  /** Error reaching the UI API at startup */
+  startupError: string | null
   login: (username: string, password: string) => Promise<void>
+  loginKeycloak: () => void
   logout: () => void
-  setTenant: (tenant: string) => void
-  reload: () => Promise<void>
+  reloadPrincipal: () => Promise<void>
 }
 
 const ROLE_RANK: Record<Role, number> = { viewer: 1, operator: 2, admin: 3 }
 
-const AuthContext = createContext<AuthContextType>({} as AuthContextType)
-
-function pickTenant(user: Me): string | null {
-  const stored = session.getTenant()
-  if (stored && user.tenants.some((t) => t.tenant === stored)) return stored
-  return user.tenants[0]?.tenant ?? null
-}
+const PrincipalContext = createContext<PrincipalContextType>({} as PrincipalContextType)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<Me | null | undefined>(session.getTokens() ? undefined : null)
-  const [tenant, setTenantState] = useState<string | null>(null)
+  const [principal, setPrincipal] = useState<Principal | null | undefined>(undefined)
+  const [config, setConfig] = useState<AuthConfig | null>(null)
+  const [startupError, setStartupError] = useState<string | null>(null)
 
-  const applyUser = useCallback((me: Me) => {
-    const next = pickTenant(me)
-    session.setTenant(next)
-    setTenantState(next)
-    setUser(me)
-  }, [])
-
-  const reload = useCallback(async () => {
+  const reloadPrincipal = useCallback(async () => {
+    if (!auth.isAuthenticated()) {
+      setPrincipal(null)
+      return
+    }
     try {
-      applyUser(await getMe())
+      setPrincipal(await getMe())
     } catch {
       session.setTokens(null)
-      setUser(null)
+      setPrincipal(null)
     }
-  }, [applyUser])
+  }, [])
 
   useEffect(() => {
-    if (session.getTokens()) reload()
-    return session.onLogout(() => setUser(null))
-  }, [reload])
+    auth
+      .init()
+      .then((c) => {
+        setConfig(c)
+        return reloadPrincipal()
+      })
+      .catch((err) => {
+        setStartupError(err.message)
+        setPrincipal(null)
+      })
+    return session.onLogout(() => setPrincipal(null))
+  }, [reloadPrincipal])
 
   const login = async (username: string, password: string) => {
-    const s = await apiLogin(username, password)
-    session.setTokens({ accessToken: s.accessToken, refreshToken: s.refreshToken })
-    applyUser({ kind: 'user', ...s.user })
+    await auth.loginLocal(username, password)
+    await reloadPrincipal()
   }
 
   const logout = () => {
-    // Ends the session on the server too (best effort: the tokens are dropped anyway)
-    const tokens = session.getTokens()
-    if (tokens) logoutSession(tokens.accessToken).catch(() => {})
-    session.setTokens(null)
-    setUser(null)
+    auth.logout()
+    setPrincipal(null)
   }
-
-  const setTenant = (next: string) => {
-    session.setTenant(next)
-    setTenantState(next)
-  }
-
-  const role = user?.tenants.find((t) => t.tenant === tenant)?.role ?? null
 
   return (
-    <AuthContext.Provider value={{ user, tenant, role, login, logout, setTenant, reload }}>
+    <PrincipalContext.Provider
+      value={{ principal, config, startupError, login, loginKeycloak: () => auth.loginKeycloak(), logout, reloadPrincipal }}
+    >
       {children}
-    </AuthContext.Provider>
+    </PrincipalContext.Provider>
   )
 }
 
-export const useAuth = () => useContext(AuthContext)
+/** The UI user (UI API principal) and the session actions. */
+export const usePrincipal = () => useContext(PrincipalContext)
 
-/** True when the current role on the selected tenant is at least `min`. */
+/**
+ * The caller as the pages of one UDC instance see it: on an instance the UI
+ * acts with the instance's service key, so every tenant is reachable with the
+ * UI user's role. Outside an instance `tenant` is null and `user.tenants` empty.
+ */
+export function useAuth() {
+  const { principal, logout } = usePrincipal()
+  const scope = useUdcScope()
+  const role: Role | null = principal?.role ?? null
+  const user: Me | null | undefined = principal
+    ? {
+        kind: 'user',
+        id: principal.id,
+        username: principal.username,
+        displayName: principal.displayName,
+        isSuperadmin: principal.role === 'admin',
+        tenants: (scope?.tenants ?? []).map((t) => ({ tenant: t.id, name: t.name, role: principal.role })),
+      }
+    : principal
+  return {
+    user,
+    tenant: scope?.tenant ?? null,
+    role,
+    logout,
+    setTenant: (tenant: string) => scope?.setTenant(tenant),
+    reload: async () => {
+      await scope?.reload()
+    },
+  }
+}
+
+/** True when the UI user's role is at least `min`. */
 export function useCan(min: Role) {
-  const { role } = useAuth()
-  return !!role && ROLE_RANK[role] >= ROLE_RANK[min]
+  const { principal } = usePrincipal()
+  return !!principal && ROLE_RANK[principal.role] >= ROLE_RANK[min]
 }

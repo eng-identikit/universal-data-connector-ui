@@ -1,27 +1,24 @@
-// Broker session (JWT pair) and selected tenant, persisted in localStorage.
+// Local-login session (the UI API's token pair), persisted in localStorage.
 
 export interface Tokens {
   accessToken: string
   refreshToken: string
 }
 
-const TOKENS_KEY = 'udc-session'
-const TENANT_KEY = 'udc-tenant'
+const TOKENS_KEY = 'udc-ui-session'
 
 type Listener = () => void
 const listeners = new Set<Listener>()
 
-function read<T>(key: string): T | null {
-  try {
-    const raw = localStorage.getItem(key)
-    return raw ? (JSON.parse(raw) as T) : null
-  } catch {
-    return null
-  }
-}
-
 export const session = {
-  getTokens: () => read<Tokens>(TOKENS_KEY),
+  getTokens(): Tokens | null {
+    try {
+      const raw = localStorage.getItem(TOKENS_KEY)
+      return raw ? (JSON.parse(raw) as Tokens) : null
+    } catch {
+      return null
+    }
+  },
 
   setTokens(tokens: Tokens | null) {
     try {
@@ -33,28 +30,29 @@ export const session = {
     if (!tokens) listeners.forEach((l) => l())
   },
 
-  getTenant: () => {
-    try {
-      return localStorage.getItem(TENANT_KEY)
-    } catch {
-      return null
-    }
-  },
-
-  setTenant(tenant: string | null) {
-    try {
-      if (tenant) localStorage.setItem(TENANT_KEY, tenant)
-      else localStorage.removeItem(TENANT_KEY)
-    } catch {
-      // ignore
-    }
-  },
-
   /** Called when the session ends (logout or refresh failure). */
   onLogout(listener: Listener) {
     listeners.add(listener)
     return () => {
       listeners.delete(listener)
+    }
+  },
+}
+
+/** Tenant last used on each UDC instance. */
+export const tenantMemory = {
+  get(udcId: string) {
+    try {
+      return localStorage.getItem(`udc-tenant:${udcId}`)
+    } catch {
+      return null
+    }
+  },
+  set(udcId: string, tenant: string) {
+    try {
+      localStorage.setItem(`udc-tenant:${udcId}`, tenant)
+    } catch {
+      // ignore
     }
   },
 }

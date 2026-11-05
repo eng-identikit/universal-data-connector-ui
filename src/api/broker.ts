@@ -148,16 +148,6 @@ const V1 = '/api/v1'
 const enc = encodeURIComponent
 const ifMatch = (version?: number) => (version ? { headers: { 'If-Match': String(version) } } : undefined)
 
-// ─── Auth ────────────────────────────────────────────────────────────────────
-
-export const login = (username: string, password: string) =>
-  apiClient.post<Session>(`${V1}/auth/login`, { username, password }).then((r) => r.data)
-
-export const getMe = () => apiClient.get<Me>(`${V1}/auth/me`).then((r) => r.data)
-
-export const changePassword = (currentPassword: string, newPassword: string) =>
-  apiClient.post<Session>(`${V1}/auth/password`, { currentPassword, newPassword }).then((r) => r.data)
-
 // ─── Entities ────────────────────────────────────────────────────────────────
 
 export const listEntities = (query: EntityQuery) =>
@@ -543,15 +533,6 @@ export interface AuthEvent {
   actor: string | null
   detail: string | null
 }
-
-/** Ends the session on the server; the token is passed explicitly because the caller drops it right away. */
-export const logoutSession = (accessToken: string) =>
-  apiClient.post(`${V1}/auth/logout`, {}, { headers: { Authorization: `Bearer ${accessToken}` } })
-
-export const listMySessions = () =>
-  apiClient.get<{ sessions: Session[] }>(`${V1}/auth/sessions`).then((r) => r.data.sessions)
-
-export const revokeMySession = (id: string) => apiClient.delete(`${V1}/auth/sessions/${enc(id)}`)
 
 /** Superadmin: active sessions of every user (or of one) and the store that keeps them */
 export const listSessions = (userId?: string) =>

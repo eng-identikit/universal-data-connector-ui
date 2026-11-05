@@ -19,7 +19,7 @@ import {
 import StorageIcon from '@mui/icons-material/Storage'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import ErrorIcon from '@mui/icons-material/Error'
-import { useNavigate } from 'react-router-dom'
+import { useScopedNavigate } from '../../context/UdcScope'
 import {
   getStorageConfig,
   getStorageHealth,
@@ -30,14 +30,14 @@ import type { StorageConfig, StorageHealth, StorageRuntimeInfo } from '../../api
 import PageHeader from '../../components/PageHeader'
 import { CodeBlock, CodeTag } from '../../components/Code'
 import { MONO } from '../../theme'
-import { useAuth } from '../../context/AuthContext'
+import { useCan } from '../../context/AuthContext'
 
 export default function Storage() {
   const { t } = useTranslation()
 
-  const navigate = useNavigate()
+  const navigate = useScopedNavigate()
   // Storage is global infrastructure: only a superadmin may test or change it
-  const canManage = !!useAuth().user?.isSuperadmin
+  const canManage = useCan('operator')
   const [current, setCurrent] = useState<StorageConfig | null>(null)
   const [alternatives, setAlternatives] = useState<Record<string, StorageConfig>>({})
   const [runtime, setRuntime] = useState<StorageRuntimeInfo | null>(null)

@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { MapContainer, TileLayer, CircleMarker, GeoJSON, Popup, useMap, useMapEvents } from 'react-leaflet'
 import type { LatLngBoundsExpression, Map as LeafletMap } from 'leaflet'
 import { Box, Link, Typography, useTheme } from '@mui/material'
-import { Link as RouterLink } from 'react-router-dom'
+import RouterLink from '../components/ScopedLink'
 import 'leaflet/dist/leaflet.css'
 import type { Entity } from '../api/broker'
 

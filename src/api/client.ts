@@ -1,19 +1,18 @@
-import axios, { type AxiosRequestConfig } from 'axios'
-import { session, type Tokens } from './session'
+import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios'
+import { auth } from './auth'
 
-// Base URL from localStorage (Settings). Empty = same origin (Vite proxy in dev, nginx in Docker).
-export const getBaseUrl = () => localStorage.getItem('udc-api-url') || ''
+/**
+ * The UI talks only to universal-data-connector-ui-api (same origin: Vite
+ * proxy in dev, nginx in Docker).
+ *
+ * - `bffClient`: the UI API itself (/api/v1/basic, /api/v1/auth/...).
+ * - `apiClient`: one UDC instance. Calls are written against the instance's
+ *   API (`/api/v1/entities`, ...) and go through the UI API's proxy of the
+ *   instance in scope (`/api/v1/auth/udc/<id>/proxy/entities`), with the
+ *   tenant in scope as X-Tenant.
+ */
 
-/** Broker stream URL (without credentials) for the given API base URL; empty = same origin. */
-export const getWsUrl = (apiBaseUrl: string) => {
-  if (!apiBaseUrl) {
-    const proto = window.location.protocol === 'https:' ? 'wss' : 'ws'
-    return `${proto}://${window.location.host}/api/v1/stream`
-  }
-  return `${apiBaseUrl.replace(/^http/, 'ws').replace(/\/$/, '')}/api/v1/stream`
-}
-
-/** Error with the HTTP status and the broker error payload. */
+/** Error with the HTTP status and the server's error payload. */
 export class ApiError extends Error {
   status?: number
   code?: string
@@ -27,85 +26,90 @@ export class ApiError extends Error {
   }
 }
 
-export const apiClient = axios.create({
-  timeout: 10000,
-  headers: { 'Content-Type': 'application/json' },
-})
+// ─── Instance scope ──────────────────────────────────────────────────────
 
-// Intercept requests to always use the current base URL, token and tenant
+interface Scope {
+  udcId: string | null
+  tenant: string | null
+}
+
+let scope: Scope = { udcId: null, tenant: null }
+
+/** The UDC instance (and tenant) the instance API calls go to. */
+export const apiScope = {
+  get: () => scope,
+  set(next: Scope) {
+    scope = next
+  },
+}
+
+const proxyBase = (udcId: string) => `/api/v1/auth/udc/${encodeURIComponent(udcId)}/proxy`
+
+/** URL of the authenticated realtime stream of the instance in scope. */
+export function getStreamUrl() {
+  const origin = `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}`
+  const params = new URLSearchParams()
+  const token = auth.getAccessToken()
+  if (token) params.set('access_token', token)
+  if (scope.tenant) params.set('tenant', scope.tenant)
+  return `${origin}/api/v1/auth/udc/${encodeURIComponent(scope.udcId ?? '')}/stream?${params}`
+}
+
+/** Refreshes the access token (shared with the 401 interceptor); null if the session ended. */
+export const refreshSession = () => auth.refresh()
+
+// ─── Clients ─────────────────────────────────────────────────────────────
+
+function errorMessage(data: any, fallback: string) {
+  const firstError = Array.isArray(data?.errors) ? data.errors[0] : undefined
+  return (
+    data?.error?.message ||
+    data?.message ||
+    (typeof firstError === 'string' ? firstError : firstError?.message) ||
+    data?.testResult?.message ||
+    (typeof data?.error === 'string' ? data.error : undefined) ||
+    fallback ||
+    'Unknown error'
+  )
+}
+
+function withAuth(client: AxiosInstance) {
+  client.interceptors.request.use((config) => {
+    const token = auth.getAccessToken()
+    if (token && !config.headers.Authorization) config.headers.Authorization = `Bearer ${token}`
+    return config
+  })
+
+  client.interceptors.response.use(
+    (res) => res,
+    async (err) => {
+      const original = err.config as (AxiosRequestConfig & { _retried?: boolean }) | undefined
+      const isLogin = original?.url?.startsWith('/api/v1/basic/')
+      if (err.response?.status === 401 && original && !original._retried && !isLogin && auth.getAccessToken()) {
+        original._retried = true
+        const token = await auth.refresh()
+        if (token) {
+          original.headers = { ...original.headers, Authorization: `Bearer ${token}` }
+          return client(original)
+        }
+      }
+      const data = err.response?.data
+      const code = typeof data?.error === 'string' ? data.error : undefined
+      return Promise.reject(
+        new ApiError(errorMessage(data, err.message), err.response?.status, code, data?.details ?? data?.error?.details),
+      )
+    },
+  )
+  return client
+}
+
+export const bffClient = withAuth(axios.create({ timeout: 20000, headers: { 'Content-Type': 'application/json' } }))
+
+export const apiClient = withAuth(axios.create({ timeout: 20000, headers: { 'Content-Type': 'application/json' } }))
+
 apiClient.interceptors.request.use((config) => {
-  config.baseURL = getBaseUrl()
-  const tokens = session.getTokens()
-  if (tokens && !config.headers.Authorization) config.headers.Authorization = `Bearer ${tokens.accessToken}`
-  const tenant = session.getTenant()
-  if (tenant && !config.headers['X-Tenant']) config.headers['X-Tenant'] = tenant
+  if (!scope.udcId) throw new ApiError('No UDC instance selected')
+  if (config.url?.startsWith('/api/v1/')) config.url = proxyBase(scope.udcId) + config.url.slice('/api/v1'.length)
+  if (scope.tenant && !config.headers['X-Tenant']) config.headers['X-Tenant'] = scope.tenant
   return config
 })
-
-// Single in-flight refresh shared by all requests failing with 401
-let refreshing: Promise<Tokens | null> | null = null
-
-async function refreshTokens(): Promise<Tokens | null> {
-  const tokens = session.getTokens()
-  if (!tokens) return null
-  try {
-    const res = await axios.post(`${getBaseUrl()}/api/v1/auth/refresh`, { refreshToken: tokens.refreshToken })
-    const next = { accessToken: res.data.accessToken, refreshToken: res.data.refreshToken }
-    session.setTokens(next)
-    return next
-  } catch {
-    // Another tab may have refreshed meanwhile (refresh tokens are single use): adopt its tokens
-    const current = session.getTokens()
-    if (current && current.refreshToken !== tokens.refreshToken) return current
-    session.setTokens(null)
-    return null
-  }
-}
-
-/** Refreshes the token pair (shared with the 401 interceptor); null if the session ended. */
-export function refreshSession() {
-  refreshing = refreshing || refreshTokens().finally(() => (refreshing = null))
-  return refreshing
-}
-
-/** URL of the authenticated broker stream for the current session and tenant. */
-export function getStreamUrl() {
-  const base = getBaseUrl()
-  const origin = base
-    ? base.replace(/^http/, 'ws')
-    : `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}`
-  const params = new URLSearchParams()
-  const tokens = session.getTokens()
-  if (tokens) params.set('access_token', tokens.accessToken)
-  const tenant = session.getTenant()
-  if (tenant) params.set('tenant', tenant)
-  return `${origin}/api/v1/stream?${params}`
-}
-
-apiClient.interceptors.response.use(
-  (res) => res,
-  async (err) => {
-    const original = err.config as (AxiosRequestConfig & { _retried?: boolean }) | undefined
-    const isAuthCall = original?.url?.includes('/api/v1/auth/')
-    if (err.response?.status === 401 && original && !original._retried && !isAuthCall && session.getTokens()) {
-      original._retried = true
-      const tokens = await refreshSession()
-      if (tokens) {
-        original.headers = { ...original.headers, Authorization: `Bearer ${tokens.accessToken}` }
-        return apiClient(original)
-      }
-    }
-
-    // Normalize error message
-    const data = err.response?.data
-    const firstError = Array.isArray(data?.errors) ? data.errors[0] : undefined
-    const message =
-      data?.message ||
-      (typeof firstError === 'string' ? firstError : firstError?.message) ||
-      data?.testResult?.message ||
-      data?.error ||
-      err.message ||
-      'Unknown error'
-    return Promise.reject(new ApiError(message, err.response?.status, data?.error, data?.details))
-  },
-)
