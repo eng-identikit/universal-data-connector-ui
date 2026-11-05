@@ -31,7 +31,7 @@ Built with **React 18 + TypeScript**, **Vite**, **Material UI (MUI v5)**, **Rech
 - **History**: attribute history of any entity.
 - **Live Data**: realtime charts and values from the authenticated broker stream.
 - **Connectors / Mapping / Storage**: connector configuration (including target tenant and entity id prefix), mapped devices and the raw data buffer.
-- **Administration**: tenant members, API keys (shown once), tenants and users (superadmin), **active sessions** (who is logged in, from where and with which client; revoke one session or all of a user's), **access log** (successful, failed and blocked logins, logouts, revocations) and **cluster** (instances, partitions, connectors, event-loop delay, queue backlogs).
+- **Administration**: tenant members, API keys (shown once), tenants and users (superadmin), **active sessions** (who is logged in, from where and with which client; revoke one session or all of a user's), **access log** (successful, failed and blocked logins, logouts, revocations), **LLM access (MCP)** (an API key for the assistant and ready-made configuration for Claude Code, Claude Desktop, VS Code) and **cluster** (instances, partitions, connectors, event-loop delay, queue backlogs).
 - **My sessions**: from the user menu everyone sees their own logins and ends the ones they do not recognise.
 - **Settings**: API URL, map tile server, language (IT/EN) and theme.
 

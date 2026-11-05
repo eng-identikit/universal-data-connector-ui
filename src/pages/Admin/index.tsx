@@ -9,9 +9,10 @@ import UsersTab from './UsersTab'
 import ClusterTab from './ClusterTab'
 import SessionsTab from './SessionsTab'
 import AccessLogTab from './AccessLogTab'
+import McpTab from './McpTab'
 import PageHeader from '../../components/PageHeader'
 
-type TabKey = 'members' | 'apikeys' | 'tenants' | 'users' | 'sessions' | 'accessLog' | 'cluster'
+type TabKey = 'members' | 'apikeys' | 'mcp' | 'tenants' | 'users' | 'sessions' | 'accessLog' | 'cluster'
 
 export default function Admin() {
   const { t } = useTranslation()
@@ -20,7 +21,7 @@ export default function Admin() {
   const isSuperadmin = !!user?.isSuperadmin
 
   const tabs: TabKey[] = [
-    ...(isTenantAdmin && tenant ? (['members', 'apikeys'] as TabKey[]) : []),
+    ...(isTenantAdmin && tenant ? (['members', 'apikeys', 'mcp'] as TabKey[]) : []),
     ...(isSuperadmin ? (['tenants', 'users', 'sessions', 'accessLog', 'cluster'] as TabKey[]) : []),
   ]
   const [selected, setSelected] = useState<TabKey | null>(null)
@@ -37,13 +38,14 @@ export default function Admin() {
             <Tab
               key={k}
               value={k}
-              label={k === 'members' || k === 'apikeys' ? `${t(`admin.tab.${k}`)} · ${tenant}` : t(`admin.tab.${k}`)}
+              label={k === 'members' || k === 'apikeys' || k === 'mcp' ? `${t(`admin.tab.${k}`)} · ${tenant}` : t(`admin.tab.${k}`)}
             />
           ))}
         </Tabs>
         <CardContent>
           {tab === 'members' && tenant && <MembersTab tenant={tenant} />}
           {tab === 'apikeys' && tenant && <ApiKeysTab tenant={tenant} />}
+          {tab === 'mcp' && tenant && <McpTab tenant={tenant} />}
           {tab === 'tenants' && <TenantsTab />}
           {tab === 'users' && <UsersTab />}
           {tab === 'sessions' && <SessionsTab />}

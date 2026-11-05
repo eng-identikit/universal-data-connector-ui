@@ -31,7 +31,7 @@ Realizzata con **React 18 + TypeScript**, **Vite**, **Material UI (MUI v5)**, **
 - **Storico**: storico degli attributi di qualsiasi entità.
 - **Dati Live**: grafici e valori in tempo reale dallo stream autenticato del broker.
 - **Connettori / Mapping / Archiviazione**: configurazione dei connettori (compresi tenant di destinazione e prefisso dell'id entità), dispositivi mappati e buffer dei dati grezzi.
-- **Amministrazione**: membri del tenant, API key (mostrate una sola volta), tenant e utenti (superadmin), **sessioni attive** (chi è collegato, da dove e con quale client, revoca di una sessione o di tutte quelle di un utente), **storico accessi** (login riusciti, falliti e bloccati, logout, revoche) e **cluster** (istanze, partizioni, connettori, ritardo dell'event loop, backlog delle code).
+- **Amministrazione**: membri del tenant, API key (mostrate una sola volta), tenant e utenti (superadmin), **sessioni attive** (chi è collegato, da dove e con quale client, revoca di una sessione o di tutte quelle di un utente), **storico accessi** (login riusciti, falliti e bloccati, logout, revoche), **accesso LLM (MCP)** (API key per l'assistente e configurazione pronta per Claude Code, Claude Desktop, VS Code) e **cluster** (istanze, partizioni, connettori, ritardo dell'event loop, backlog delle code).
 - **Le mie sessioni**: dal menu utente ognuno vede i propri accessi e chiude quelli che non riconosce.
 - **Impostazioni**: URL dell'API, tile server della mappa, lingua (IT/EN) e tema.
 

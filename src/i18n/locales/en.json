@@ -387,7 +387,8 @@
       "users": "Users",
       "cluster": "Cluster",
       "sessions": "Sessions",
-      "accessLog": "Access log"
+      "accessLog": "Access log",
+      "mcp": "LLM access (MCP)"
     },
     "tenant": "Tenant",
     "role": "Role",
@@ -673,5 +674,26 @@
     "noOutput": "No result: the message would not be sent.",
     "showInput": "Show input",
     "hideInput": "Hide input"
+  },
+  "mcp": {
+    "intro": "An AI assistant (Claude, or another client that speaks the Model Context Protocol) can read the data of tenant {{tenant}}: data model, entities, relationships and history. Access is read-only and sees only what its API key can see.",
+    "endpoint": "Endpoint",
+    "readOnly": "Read-only",
+    "keyStep": "Create an API key for the assistant",
+    "keyHelp": "Viewer role, this tenant only. To limit the data the assistant sees, choose the allowed entity types. You can revoke it at any time from the API keys tab.",
+    "createKey": "Create API key",
+    "clientStep": "Configure the client",
+    "stdioClients": "Claude Desktop and stdio clients",
+    "otherClients": "Other clients",
+    "copied": "Copied",
+    "placeholder": "Replace {{placeholder}} with the key, or create one above: it will appear in the configuration.",
+    "tools": "Tools available to the assistant",
+    "disabled": "The MCP endpoint is turned off on this server (BROKER_MCP=false).",
+    "help": {
+      "claudeCode": "Run the command in a terminal: the udc server becomes available in Claude Code.",
+      "stdio": "In the client's MCP configuration file (for Claude Desktop: claude_desktop_config.json). It uses mcp-remote, which connects stdio clients to an HTTP endpoint; Node.js is required.",
+      "vscode": "In the project's .vscode/mcp.json, or in the user MCP configuration.",
+      "http": "For any client that supports the Streamable HTTP transport with an authentication header."
+    }
   }
 }

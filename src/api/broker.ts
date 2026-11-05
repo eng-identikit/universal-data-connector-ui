@@ -598,3 +598,14 @@ export const previewTransformer = (body: {
   types?: string[]
   notify?: { attrs?: string[]; format?: 'full' | 'values'; perEntity?: boolean }
 }) => apiClient.post<TransformerPreview>(`${V1}/transformers/preview`, body).then((r) => r.data)
+
+// ─── MCP (LLM access) ────────────────────────────────────────────────────────
+
+export interface McpInfo {
+  enabled: boolean
+  path: string
+  transport: string
+  tools: { name: string; title: string; description: string }[]
+}
+
+export const getMcpInfo = () => apiClient.get<McpInfo>(`${V1}/mcp-info`).then((r) => r.data)
