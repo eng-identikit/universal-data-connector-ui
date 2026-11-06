@@ -112,3 +112,7 @@ src/
 | Charts | Recharts |
 | Maps | Leaflet + react-leaflet |
 | i18n | i18next + react-i18next |
+
+## License
+
+Licensed under the [Apache License, Version 2.0](LICENSE).
