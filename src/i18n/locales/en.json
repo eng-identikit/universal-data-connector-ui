@@ -126,7 +126,9 @@
       "tenant": "Tenant",
       "tenantHelp": "Devices of this source become entities of this tenant",
       "entityIdPrefix": "Entity ID prefix",
-      "entityIdPrefixHelp": "Prepended to the device ID (optional)"
+      "entityIdPrefixHelp": "Prepended to the device ID (optional)",
+      "placement": "Placement (replica labels)",
+      "placementHelp": "Cluster only: the connector runs on replicas started with all these labels (UDC_INSTANCE_LABELS), e.g. the one with the serial port. Empty: any replica."
     }
   },
   "mapping": {
@@ -610,7 +612,8 @@
     "inFlight": "{{n}} in flight",
     "ingested": "Updates applied (this instance)",
     "rejected": "{{n}} rejected",
-    "lastIngestError": "Last ingest error"
+    "lastIngestError": "Last ingest error",
+    "labelHelp": "Replica label (UDC_INSTANCE_LABELS): connectors with this placement run here"
   },
   "sessions": {
     "none": "No active sessions",
@@ -780,7 +783,8 @@
     "deleteBlockTitle": "Delete block",
     "deleteSourceMessage": "Delete source \"{{name}}\"? The connector is stopped and removed from the UDC configuration.",
     "deleteSinkMessage": "Delete sink \"{{name}}\"? The subscription is deleted from the UDC.",
-    "instance": "Replica"
+    "instance": "Replica",
+    "placement": "Placement"
   },
   "udcDialog": {
     "newTitle": "Add UDC",

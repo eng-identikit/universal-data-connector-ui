@@ -108,6 +108,7 @@ export default function ConnectorDialog({ open, source, onClose, onSaved, initia
   const { user, tenant: currentTenant } = useAuth()
   const [tenant, setTenant] = useState('default')
   const [entityIdPrefix, setEntityIdPrefix] = useState('')
+  const [placementInput, setPlacementInput] = useState('')
   const [configJson, setConfigJson] = useState('')
   const [tagsInput, setTagsInput] = useState('')
   const [jsonError, setJsonError] = useState<string | null>(null)
@@ -122,6 +123,7 @@ export default function ConnectorDialog({ open, source, onClose, onSaved, initia
         setEnabled(source.enabled)
         setTenant(source.tenant ?? 'default')
         setEntityIdPrefix(source.entityIdPrefix ?? '')
+        setPlacementInput(source.placement?.join(', ') ?? '')
         setConfigJson(JSON.stringify(source.config, null, 2))
         setTagsInput(source.tags?.join(', ') ?? '')
       } else {
@@ -131,6 +133,7 @@ export default function ConnectorDialog({ open, source, onClose, onSaved, initia
         setEnabled(true)
         setTenant(currentTenant ?? 'default')
         setEntityIdPrefix('')
+        setPlacementInput('')
         setConfigJson(JSON.stringify(TYPE_DEFAULTS[initial] ?? {}, null, 2))
         setTagsInput('')
       }
@@ -176,6 +179,8 @@ export default function ConnectorDialog({ open, source, onClose, onSaved, initia
         tenant,
         // Always sent, so clearing the field removes a previous prefix
         entityIdPrefix: entityIdPrefix.trim(),
+        // Always sent, so clearing the field lets the connector run on any replica
+        placement: [...new Set(placementInput.split(/[s,]+/).map((l) => l.trim()).filter(Boolean))],
         config,
         tags: tagsInput
           .split(',')
@@ -273,6 +278,17 @@ export default function ConnectorDialog({ open, source, onClose, onSaved, initia
               size="small"
               placeholder="plant1:line3:"
               helperText={t('connectors.form.entityIdPrefixHelp')}
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              label={t('connectors.form.placement')}
+              value={placementInput}
+              onChange={(e) => setPlacementInput(e.target.value)}
+              fullWidth
+              size="small"
+              placeholder="serial, site-a"
+              helperText={t('connectors.form.placementHelp')}
             />
           </Grid>
 

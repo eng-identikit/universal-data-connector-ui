@@ -135,6 +135,9 @@ export default function ClusterTab() {
               <TableCell sx={{ fontFamily: MONO, fontSize: '0.75rem' }}>
                 {i.id}
                 {i.id === status.self && <Chip size="small" label={t('cluster.this')} sx={{ ml: 1, height: 18 }} />}
+                {(i.info.labels ?? []).map((l) => (
+                  <Chip key={l} size="small" variant="outlined" label={l} title={t('cluster.labelHelp')} sx={{ ml: 0.5, height: 18 }} />
+                ))}
               </TableCell>
               <TableCell>
                 {i.alive ? <CheckCircleIcon fontSize="small" color="success" /> : <CancelIcon fontSize="small" color="disabled" />}

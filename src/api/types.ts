@@ -71,6 +71,8 @@ export interface Source {
   /** Broker tenant that receives this source's devices as entities */
   tenant?: string
   entityIdPrefix?: string
+  /** Cluster: runs only on replicas having all these labels (UDC_INSTANCE_LABELS) */
+  placement?: string[]
   runtime?: ConnectorRuntime
 }
 

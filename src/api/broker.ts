@@ -449,6 +449,8 @@ export interface ClusterInstance {
     connectors?: string[]
     loopDelayP50Ms?: number
     loopDelayP99Ms?: number
+    /** UDC_INSTANCE_LABELS of the replica (connector placement) */
+    labels?: string[]
     memoryMb?: number
     stream?: { clients: number; dropped: number }
     ingest?: { applyMsAvg: number | null; written: number; rejected: number }

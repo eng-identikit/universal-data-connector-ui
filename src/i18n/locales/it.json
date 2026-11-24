@@ -126,7 +126,9 @@
       "tenant": "Tenant",
       "tenantHelp": "I dispositivi di questa sorgente diventano entità di questo tenant",
       "entityIdPrefix": "Prefisso ID entità",
-      "entityIdPrefixHelp": "Aggiunto davanti all'ID del dispositivo (opzionale)"
+      "entityIdPrefixHelp": "Aggiunto davanti all'ID del dispositivo (opzionale)",
+      "placement": "Placement (etichette replica)",
+      "placementHelp": "Solo in cluster: il connettore gira sulle repliche avviate con tutte queste etichette (UDC_INSTANCE_LABELS), ad es. quella con la porta seriale. Vuoto: qualsiasi replica."
     }
   },
   "mapping": {
@@ -610,7 +612,8 @@
     "inFlight": "{{n}} in elaborazione",
     "ingested": "Update applicati (questa istanza)",
     "rejected": "{{n}} rifiutati",
-    "lastIngestError": "Ultimo errore di ingest"
+    "lastIngestError": "Ultimo errore di ingest",
+    "labelHelp": "Etichetta della replica (UDC_INSTANCE_LABELS): qui girano i connettori con questo placement"
   },
   "sessions": {
     "none": "Nessuna sessione attiva",
@@ -780,7 +783,8 @@
     "deleteBlockTitle": "Elimina blocco",
     "deleteSourceMessage": "Eliminare la sorgente \"{{name}}\"? Il connettore viene fermato e tolto dalla configurazione dell'UDC.",
     "deleteSinkMessage": "Eliminare la destinazione \"{{name}}\"? La subscription viene eliminata dall'UDC.",
-    "instance": "Replica"
+    "instance": "Replica",
+    "placement": "Placement"
   },
   "udcDialog": {
     "newTitle": "Aggiungi UDC",

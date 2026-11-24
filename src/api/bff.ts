@@ -69,6 +69,8 @@ export interface FlowSource {
   tenant: string
   tags: string[]
   entityIdPrefix: string | null
+  /** Cluster: runs only on replicas having all these labels */
+  placement: string[]
   status: SourceStatus
   stats: Record<string, unknown> | null
   lastActivity: string | null

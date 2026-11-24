@@ -196,6 +196,13 @@ export default function Inspector({ data, actions }: { data: BoardNodeData; acti
             <CodeTag>{source.entityIdPrefix}</CodeTag>
           </Row>
         )}
+        {source.placement?.length > 0 && (
+          <Row label={t('board.placement')}>
+            {source.placement.map((l) => (
+              <CodeTag key={l}>{l}</CodeTag>
+            ))}
+          </Row>
+        )}
         {source.lastActivity && <Row label={t('board.lastActivity')}>{relativeTime(source.lastActivity)}</Row>}
         {source.instance && (
           <Row label={t('board.instance')}>
